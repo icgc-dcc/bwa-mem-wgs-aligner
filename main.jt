@@ -14,6 +14,30 @@ workflow:
       type: string
       is_file: true
       default: "[picard.jar](https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar)"
+    reference_gz_amb:
+      type: string
+      is_file: true
+      default: "[genome.fa.gz.64.amb](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.amb)"
+    reference_gz_sa:
+      type: string
+      is_file: true
+      default: "[genome.fa.gz.64.sa](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.sa)"
+    reference_gz_pac:
+      type: string
+      is_file: true
+      default: "[genome.fa.gz.64.pac](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.pac)"
+    reference_gz_ann:
+      type: string
+      is_file: true
+      default: "[genome.fa.gz.64.ann](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.ann)"
+    reference_gz_bwt:
+      type: string
+      is_file: true
+      default: "[genome.fa.gz.64.bwt](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.bwt)"
+    reference_gz_fai:
+      type: string
+      is_file: true
+      default: "[genome.fa.gz.fai](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai)"
     reference_gz:
       type: string
       is_file: true
@@ -35,11 +59,19 @@ workflow:
           tool: lane_bam_qc
           input:
             lane_bam: lane_bam
+            picard_jar: picard_jar
 
     pcawg_aligner:
       tool: pcawg_aligner
       input:
         lane_bams: bams@gen_lane_bam
+        reference_gz_amb: reference_gz_amb
+        reference_gz_sa: reference_gz_sa
+        reference_gz_pac: reference_gz_pac
+        reference_gz_ann: reference_gz_ann
+        reference_gz_bwt: reference_gz_bwt
+        reference_gz_fai: reference_gz_fai
+        reference_gz: reference_gz
 
     aligned_bam_qc:
       tool: aligned_bam_qc
@@ -73,14 +105,17 @@ tools:
         items:
           type: string
           is_file: true
-          file_pattern: "*.bam"
+          glob_pattern: "*.bam"
 
   lane_bam_qc:
     command: |
-      java -jar picard.jar CollectQualityYieldMetrics \
+      java -jar ${picard_jar} CollectQualityYieldMetrics \
         I=${lane_bam} \
         O=${lane_bam}.quality_yield_metrics.txt
     input:
+      picard_jar:
+        type: string
+        is_file: true
       lane_bam:
         type: string
         is_file: true
@@ -110,31 +145,24 @@ tools:
       reference_gz_amb:
         type: string
         is_file: true
-        default: "[genome.fa.gz.64.amb](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.amb)"
       reference_gz_sa:
         type: string
         is_file: true
-        default: "[genome.fa.gz.64.sa](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.sa)"
       reference_gz_pac:
         type: string
         is_file: true
-        default: "[genome.fa.gz.64.pac](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.pac)"
       reference_gz_ann:
         type: string
         is_file: true
-        default: "[genome.fa.gz.64.ann](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.ann)"
       reference_gz_bwt:
         type: string
         is_file: true
-        default: "[genome.fa.gz.64.bwt](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.bwt)"
       reference_gz_fai:
         type: string
         is_file: true
-        default: "[genome.fa.gz.fai](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai)"
       reference_gz:
         type: string
         is_file: true
-        default: "[genome.fa.gz](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz)"
     output:
       merged_output_bam:
         type: string
@@ -183,7 +211,7 @@ tools:
         items:
           type: string
           is_file: true
-          file_pattern: multiple_metrics*.txt
+          glob_pattern: "multiple_metrics*.txt"
 
   aligned_bam_oxog_metrics:
     command: |
