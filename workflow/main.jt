@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.1"
+  version: "0.0.2"
 
   input:
     metadata_yaml:
@@ -125,8 +125,19 @@ tools:
         is_file: true
         value: ${lane_bam}.quality_yield_metrics.txt
 
-  pcawg_aligner:
-    command: pcawg_aligner.py ${sep=',' lane_bams}
+  pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
+    command: |
+      pcawg_aligner.py --bams ${sep=',' lane_bams} \
+        --output_dir ${output_dir} \
+        --output_file_basename ${output_file_basename} \
+        --download_reference_files ${download_reference_files} \
+        --reference_gz_amb ${reference_gz_amb} \
+        --reference_gz_sa ${reference_gz_sa} \
+        --reference_gz_pac ${reference_gz_pac} \
+        --reference_gz_ann ${reference_gz_ann} \
+        --reference_gz_bwt ${reference_gz_bwt} \
+        --reference_gz_fai ${reference_gz_fai} \
+        --reference_gz ${reference_gz}
     input:
       lane_bams:
         type: array
@@ -216,9 +227,9 @@ tools:
   aligned_bam_oxog_metrics:
     command: |
       java -jar ${picard_jar} CollectOxoGMetrics \
-      I=${aligned_bam} \
-      O=oxoG_metrics.txt \
-      R=${reference_sequence}
+        I=${aligned_bam} \
+        O=oxoG_metrics.txt \
+        R=${reference_sequence}
     input:
       picard_jar:
         type: string
