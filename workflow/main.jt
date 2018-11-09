@@ -105,10 +105,27 @@ tools:
     command: |
       python -c '
       import sys
+      import json
+      import subprocess
       lane_bams = sys.argv[1].split(",")
+
+      metrics = []
       for bam in lane_bams:
-        print "java -jar ${picard_jar} CollectQualityYieldMetrics I=%s O=%s.quality_yield_metrics.txt" % (bam, bam)
-      ' ${sep=',' lane_bams} > output.txt
+        metrics_file = "%s.quality_yield_metrics.txt" % bam
+        command = "java -jar ${picard_jar} CollectQualityYieldMetrics I=%s O=%s" % (bam, metrics_file)
+        try:
+          p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+          stdout, stderr = p.communicate()
+        except Exception as e:
+          exit(stderr)
+        metrics.append(metrics_file)
+
+      print(json.dumps({
+        "metrics": metrics
+      }))
+
+      ' ${sep=',' lane_bams} > output.json 2> std.err
+
     input:
       picard_jar:
         type: string
