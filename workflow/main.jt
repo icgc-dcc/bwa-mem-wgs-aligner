@@ -49,17 +49,11 @@ workflow:
       input:
         metadata_yaml: metadata_yaml
 
-    parallel_qc:
-      scatter:
-        input:
-          lane_bam:
-            with_items: bams@gen_lane_bam
-      tasks:
-        lane_bam_qc:
-          tool: lane_bam_qc
-          input:
-            lane_bam: lane_bam
-            picard_jar: picard_jar
+    lane_bam_qc:
+      tool: lane_bam_qc
+      input:
+        lane_bams: bams@gen_lane_bam
+        picard_jar: picard_jar
 
     pcawg_aligner:
       tool: pcawg_aligner
@@ -109,21 +103,28 @@ tools:
 
   lane_bam_qc:
     command: |
-      java -jar ${picard_jar} CollectQualityYieldMetrics \
-        I=${lane_bam} \
-        O=${lane_bam}.quality_yield_metrics.txt
+      python -c '
+      import sys
+      lane_bams = sys.argv[1].split(",")
+      for bam in lane_bams:
+        print "java -jar ${picard_jar} CollectQualityYieldMetrics I=%s O=%s.quality_yield_metrics.txt" % (bam, bam)
+      ' ${sep=',' lane_bams} > output.txt
     input:
       picard_jar:
         type: string
         is_file: true
-      lane_bam:
-        type: string
-        is_file: true
+      lane_bams:
+        type: array
+        items:
+          type: string
+          is_file: true
     output:
       metrics:
-        type: string
-        is_file: true
-        value: ${lane_bam}.quality_yield_metrics.txt
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.quality_yield_metrics.txt"
 
   pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
     command: |
