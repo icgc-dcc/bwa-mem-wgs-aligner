@@ -13,35 +13,35 @@ workflow:
     picard_jar:
       type: string
       is_file: true
-      default: "[picard.jar](https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar)"
+      default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     reference_gz_amb:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.amb](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.amb)"
+      default: "[genome.fa.gz.64.amb]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.amb"
     reference_gz_sa:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.sa](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.sa)"
+      default: "[genome.fa.gz.64.sa]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.sa"
     reference_gz_pac:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.pac](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.pac)"
+      default: "[genome.fa.gz.64.pac]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.pac"
     reference_gz_ann:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.ann](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.ann)"
+      default: "[genome.fa.gz.64.ann]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.ann"
     reference_gz_bwt:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.bwt](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.bwt)"
+      default: "[genome.fa.gz.64.bwt]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.bwt"
     reference_gz_fai:
       type: string
       is_file: true
-      default: "[genome.fa.gz.fai](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai)"
+      default: "genome.fa.gz.fai]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai"
     reference_gz:
       type: string
       is_file: true
-      default: "[genome.fa.gz](https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz)"
+      default: "[genome.fa.gz]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz"
 
   tasks:
     gen_lane_bam:
