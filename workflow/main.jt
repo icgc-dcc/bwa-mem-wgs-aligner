@@ -10,6 +10,7 @@ workflow:
     metadata_yaml:
       type: string
       is_file: true
+      is_required: true
     picard_jar:
       type: string
       is_file: true
