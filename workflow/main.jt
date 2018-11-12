@@ -7,8 +7,12 @@ workflow:
   version: "0.0.5"
 
   env_var:
-  - SCORE_TOKEN
-  - SONG_TOKEN
+    SCORE_TOKEN:
+      type: string
+      is_required: true
+    SONG_TOKEN:
+      type: string
+      is_required: true
   input:
     metadata_yaml:
       type: string
