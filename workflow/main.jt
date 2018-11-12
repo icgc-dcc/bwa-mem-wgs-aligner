@@ -157,7 +157,7 @@ tools:
 
   pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
     command: |
-      dockstore_cwl_runner.py --pcawg_aligner_dockstore_url ${pcawg_aligner_dockstore_url} \
+      dockstore_cwl_runner.py --dockstore_tool_url ${pcawg_aligner_dockstore_url} \
         --reads ${sep=',' lane_bams} \
         --output_dir ${output_dir} \
         --output_file_basename ${output_file_basename} \
