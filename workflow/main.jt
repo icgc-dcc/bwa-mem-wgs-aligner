@@ -6,6 +6,9 @@ workflow:
   name:  bwa-mem-wgs-aligner
   version: "0.0.5"
 
+  env_var:
+  - SCORE_TOKEN
+  - SONG_TOKEN
   input:
     metadata_yaml:
       type: string
