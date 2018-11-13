@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.5"
+  version: "0.0.6"
 
   env_var:
     SCORE_TOKEN:
@@ -159,9 +159,9 @@ tools:
     command: |
       dockstore_cwl_runner.py --dockstore_tool_url ${pcawg_aligner_dockstore_url} \
         --reads ${sep=',' lane_bams} \
-        --output_dir ${output_dir} \
-        --output_file_basename ${output_file_basename} \
-        --download_reference_files ${download_reference_files} \
+        --output_dir datastore \
+        --output_file_basename pcawg2-wgs.${uuid()} \
+        --download_reference_files false \
         --reference_gz_amb ${reference_gz_amb} \
         --reference_gz_sa ${reference_gz_sa} \
         --reference_gz_pac ${reference_gz_pac} \
@@ -177,15 +177,6 @@ tools:
         items:
           type: string
           is_file: true
-      output_dir:
-        type: string
-        default: datastore  # default value
-      output_file_basename:
-        type: string
-        default: ${uuid()}  # default ramdon uuid
-      download_reference_files:
-        type: boolean
-        default: true
       reference_gz_amb:
         type: string
         is_file: true
@@ -207,7 +198,7 @@ tools:
       reference_gz:
         type: string
         is_file: true
-    output:
+    output:  # output section is ignored for now
       merged_output_bam:
         type: string
         is_file: true
