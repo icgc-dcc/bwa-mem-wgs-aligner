@@ -48,7 +48,7 @@ workflow:
     reference_gz_fai:
       type: string
       is_file: true
-      default: "genome.fa.gz.fai]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai"
+      default: "[genome.fa.gz.fai]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai"
     reference_gz:
       type: string
       is_file: true
