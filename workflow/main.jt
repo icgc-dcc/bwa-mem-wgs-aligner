@@ -59,6 +59,7 @@ workflow:
       tool: gen_lane_bam
       input:
         metadata_yaml: metadata_yaml
+        picard_jar: picard_jar
 
     lane_bam_qc:
       tool: lane_bam_qc
@@ -100,9 +101,12 @@ workflow:
 # Each tool can have its own docker imagine if desirable
 tools:
   gen_lane_bam:
-    command: gen_lane_bam.py ${metadata_yaml}
+    command: gen_lane_bam.py ${metadata_yaml} ${picard_jar}
     input:
       metadata_yaml:
+        type: string
+        is_file: true
+      picard_jar:
         type: string
         is_file: true
     output:
