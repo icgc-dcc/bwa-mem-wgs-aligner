@@ -5,6 +5,7 @@ import argparse
 import subprocess
 import yaml
 import json
+import os
 
 """
 This is fairly general approach, it could be a univeral tool that
@@ -72,5 +73,14 @@ with open('job.json', 'w') as fp:
 
 subprocess.call(['cwltool','pcawg-bwa-mem.cwl','job.json'])
 
+output_path = os.path.join(os.path.abspath(args.output_dir),args.output_file_basename)
+
 with open("output.json", "w") as o:
-  o.write('{"merged_output_bam": "aligned.bam"}')
+  json.dump({
+    'merged_output_bai': output_path+'.bam.bai',
+    'merged_output_unmapped_metrics': output_path+'.unmapped.bam.metrics',
+    'merged_output_bam': output_path+'.bam',
+    'merged_output_metrics': output_path+'.bam.metrics',
+    'merged_output_unmapped_bai': output_path+'.unmapped.bam.bai',
+    'merged_output_unmapped_bam': output_path+'.unmapped.bam'
+  },o)
