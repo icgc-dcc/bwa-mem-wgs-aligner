@@ -84,14 +84,20 @@ def reshape_metadata(input_metadata):
         output_metadata['files'].append(value)
     return output_metadata
 
-picard=os.environ.get('PICARD')
-cwd = os.getcwd()
 
-if len(sys.argv) != 2:
-    sys.exit('Usage: %s <metadata.yaml>' % sys.argv[0])
+
+if len(sys.argv) != 3:
+    sys.exit('Usage: %s <metadata.yaml> <picard_jar>' % sys.argv[0])
 
 if not sys.argv[1]:
     sys.exit('Must specify metadata.yaml file')
+
+if not sys.argv[2]:
+    sys.exit('Must specify picard jar')
+
+
+cwd = os.getcwd()
+picard=sys.argv[2]
 
 # read the yaml file
 with open(sys.argv[1], 'r') as f:
