@@ -161,7 +161,7 @@ for _file in files:
     if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
 
     # Revert the bam to unaligned and lane level bam sorted by query name
-    output_dir = os.path.join(cwd, object_id, 'lane_unaligned')
+    output_dir = os.path.join(cwd, 'lane_unaligned')
     if not os.path.isdir(output_dir): os.makedirs(output_dir)
     try:
         subprocess.run(['java', '-jar', picard,
