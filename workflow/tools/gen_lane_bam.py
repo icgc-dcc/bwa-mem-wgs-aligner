@@ -87,13 +87,13 @@ def reshape_metadata(input_metadata):
 
 
 if len(sys.argv) != 3:
-    sys.exit('Usage: %s <metadata.yaml> <picard_jar>' % sys.argv[0])
+    sys.exit('\nUsage: %s <metadata.yaml> <picard_jar>' % sys.argv[0])
 
 if not sys.argv[1]:
-    sys.exit('Must specify metadata.yaml file')
+    sys.exit('\nMust specify metadata.yaml file')
 
 if not sys.argv[2]:
-    sys.exit('Must specify picard jar')
+    sys.exit('\nMust specify picard jar')
 
 
 cwd = os.getcwd()
@@ -103,114 +103,206 @@ picard=sys.argv[2]
 with open(sys.argv[1], 'r') as f:
     input_metadata=yaml.load(f)
 
-# reshape the metadata
-metadata=reshape_metadata(input_metadata)
-
-
-# download the file
 mapping = {
     'collaboratory': 'collab',
     'amazon': 'aws'
 }
 
-files = metadata.get('files')
-for _file in files:
-    file_path = _file.get('path')
-    file_name = _file.get('name')
-    storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
+output_bams = {'bams': []}
 
-    try:
-        subprocess.run(['score-client',
-                                 '--profile', mapping.get(storage_site),
-                                 'download',
-                                 '--object-id', object_id,
-                                 '--output-dir', cwd,
-                                 '--index', 'false',
-                                 '--force'], check=True)
-    except Exception as e:
-        sys.exit('\n%s: Download object failed: %s' % (e, object_id))
+# detect the input format
+input_format=set()
+for rg in input_metadata['read_groups']:
+    for rg_file in rg['files']:
+        input_format.add(rg_file.get('format'))
 
-    # get all the rg for the _file
-    rg_yaml = set()
-    rg_replace = {}
-    for rg in _file.get('read_groups'):
-        rg_yaml.add(rg.get('rg_id_in_file'))
-        if not rg.get('rg_id_in_file') == rg.get('read_group_id'):
-            rg_replace[rg.get('rg_id_in_file')] = {'ID': rg.get('read_group_id'),
-                                                   'LB': rg.get('library_name'),
-                                                   'PL': rg.get('sequencing_platform'),
-                                                   'PU': rg.get('platform_unit'),
-                                                   'SM': metadata.get('submitter_sample_id'),
-                                                   'PM': rg.get('platform_model'),
-                                                   'CN': rg.get('sequencing_center'),
-                                                   'PI': rg.get('insert_size'),
-                                                   'DT': rg.get('sequencing_date')}
+if not len(input_format) == 1: sys.exit('\n%s: The input files should have the same format.')
 
-    # retrieve the @RG from BAM header
-    try:
-        header = subprocess.check_output(['samtools', 'view', '-H', os.path.join(cwd, file_name)])
+# the inputs are BAM
+input_format = input_format.pop()
+if input_format == 'BAM':
+    # reshape the metadata
+    metadata=reshape_metadata(input_metadata)
 
-    except Exception as e:
-        sys.exit('\n%s: Retrieve BAM header failed: %s' % (e, os.path.join(cwd, file_name)))
+    # download the file
+    files = metadata.get('files')
+    for _file in files:
+        file_path = _file.get('path')
+        file_name = _file.get('name')
 
-    # get @RG
-    header_array = header.decode('utf-8').rstrip().split('\n')
-    rg_bam = set()
-    for line in header_array:
-        if not line.startswith("@RG"): continue
-        rg_array = line.rstrip().split('\t')[1:]
-        for element in rg_array:
-            if not element.startswith('ID'): continue
-            rg_bam.add(':'.join(element.rstrip().split(':')[1:]))
+        if file_path.startswith('song://'):
+            storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
 
-    # compare the RG ids
-    if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
-
-    # Revert the bam to unaligned and lane level bam sorted by query name
-    output_dir = os.path.join(cwd, 'lane_unaligned')
-    if not os.path.isdir(output_dir): os.makedirs(output_dir)
-    try:
-        subprocess.run(['java', '-jar', picard,
-                        'RevertSam', 'I=%s' % os.path.join(cwd, file_name),
-                        'OUTPUT_BY_READGROUP=true', 'O=%s' % output_dir], check=True)
-    except Exception as e:
-        sys.exit('\n%s: RevertSam failed: %s' %(e, os.path.join(cwd, file_name)))
-
-
-    # detect if read_group replacement are needed
-    if rg_replace: # need to replace
-        for rg_old, rg_new in rg_replace.items():
             try:
-                subprocess.run(['java', '-jar', picard,
-                                'AddOrReplaceReadGroups', 'I=%s' % os.path.join(output_dir, rg_old+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.bam'),
-                                'RGID=%s' % rg_new.get('ID'), 'RGLB=%s' % rg_new.get('LB'), 'RGPL=%s' % rg_new.get('PL'),
-                                'RGPU=%s' % rg_new.get('PU'), 'RGSM=%s' % rg_new.get('SM'), 'RGPM=%s' % rg_new.get('PM'),
-                                'RGCN=%s' % rg_new.get('CN'), 'RGPI=%s' % rg_new.get('PI'), 'RGDT=%s' % rg_new.get('DT')], check=True)
+                subprocess.run(['score-client',
+                                         '--profile', mapping.get(storage_site),
+                                         'download',
+                                         '--object-id', object_id,
+                                         '--output-dir', cwd,
+                                         '--index', 'false',
+                                         '--force'], check=True)
             except Exception as e:
-                sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(output_dir, rg_old+'.bam')))
+                sys.exit('\n%s: Download object failed: %s' % (e, object_id))
 
+            file_with_path = os.path.join(cwd, file_name)
 
-    # no need to replace
-    # add comments to lane-level bams
-    output_bams = {'bams': []}
-    for rg in _file.get('read_groups'):
+        elif file_path.startswith('file://'):
+            file_with_path = os.path.join(cwd, file_path.strip('file://'), file_name)
+
+        else:
+            sys.exit('\n Unrecognized file path!')
+
+        # get all the rg for the _file
+        rg_yaml = set()
+        rg_replace = {}
+        for rg in _file.get('read_groups'):
+            rg_yaml.add(rg.get('rg_id_in_file'))
+            if not rg.get('rg_id_in_file') == rg.get('read_group_id'):
+                rg_replace[rg.get('rg_id_in_file')] = {'ID': rg.get('read_group_id'),
+                                                       'LB': rg.get('library_name'),
+                                                       'PL': rg.get('sequencing_platform'),
+                                                       'PU': rg.get('platform_unit'),
+                                                       'SM': metadata.get('submitter_sample_id'),
+                                                       'PM': rg.get('platform_model'),
+                                                       'CN': rg.get('sequencing_center'),
+                                                       'PI': rg.get('insert_size'),
+                                                       'DT': rg.get('sequencing_date')}
+
+        # retrieve the @RG from BAM header
+        try:
+            header = subprocess.check_output(['samtools', 'view', '-H', file_with_path])
+
+        except Exception as e:
+            sys.exit('\n%s: Retrieve BAM header failed: %s' % (e, file_with_path))
+
+        # get @RG
+        header_array = header.decode('utf-8').rstrip().split('\n')
+        rg_bam = set()
+        for line in header_array:
+            if not line.startswith("@RG"): continue
+            rg_array = line.rstrip().split('\t')[1:]
+            for element in rg_array:
+                if not element.startswith('ID'): continue
+                rg_bam.add(':'.join(element.rstrip().split(':')[1:]))
+
+        # compare the RG ids
+        if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
+
+        # Revert the bam to unaligned and lane level bam sorted by query name
+        output_dir = os.path.join(cwd, 'lane_unaligned')
+        if not os.path.isdir(output_dir): os.makedirs(output_dir)
         try:
             subprocess.run(['java', '-jar', picard,
-                            'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.bam'),
-                            'O=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'),
-                            'C=dcc_project_code:%s' % metadata.get('dcc_project_code'),
-                            'C=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
-                            'C=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
-                            'C=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
-                            'C=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
-                            'C=library_strategy:%s' % metadata.get('library_strategy'),
-                            'C=use_cntl:%s' % metadata.get('use_cntl', None)], check=True)
+                            'RevertSam', 'I=%s' % file_with_path,
+                            'OUTPUT_BY_READGROUP=true', 'O=%s' % output_dir], check=True)
         except Exception as e:
-            sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
-
-        output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'))
+            sys.exit('\n%s: RevertSam failed: %s' %(e, file_with_path))
 
 
-    with open("output.json", "w") as o:
-      o.write(json.dumps(output_bams))
+        # detect if read_group replacement are needed
+        if rg_replace: # need to replace
+            for rg_old, rg_new in rg_replace.items():
+                try:
+                    subprocess.run(['java', '-jar', picard,
+                                    'AddOrReplaceReadGroups', 'I=%s' % os.path.join(output_dir, rg_old+'.bam'),
+                                    'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.bam'),
+                                    'RGID=%s' % rg_new.get('ID'), 'RGLB=%s' % rg_new.get('LB'), 'RGPL=%s' % rg_new.get('PL'),
+                                    'RGPU=%s' % rg_new.get('PU'), 'RGSM=%s' % rg_new.get('SM'), 'RGPM=%s' % rg_new.get('PM'),
+                                    'RGCN=%s' % rg_new.get('CN'), 'RGPI=%s' % rg_new.get('PI'), 'RGDT=%s' % rg_new.get('DT')], check=True)
+                except Exception as e:
+                    sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(output_dir, rg_old+'.bam')))
+
+
+        # no need to replace
+        # add comments to lane-level bams
+
+        for rg in _file.get('read_groups'):
+            try:
+                subprocess.run(['java', '-jar', picard,
+                                'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.bam'),
+                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'),
+                                'C=dcc_project_code:%s' % metadata.get('dcc_project_code'),
+                                'C=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
+                                'C=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
+                                'C=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
+                                'C=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
+                                'C=library_strategy:%s' % metadata.get('library_strategy'),
+                                'C=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
+            except Exception as e:
+                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+
+            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'))
+
+elif input_format == 'FASTQ':
+    metadata = input_metadata
+    read_groups = metadata.get('read_groups')
+    for rg in read_groups:
+        read_group_id = rg.get('read_group_id')
+        files = rg.get('files')
+        file_with_path = []
+        for _file in files:
+            file_path = _file.get('path')
+
+            if file_path.startswith('song://'):
+                storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
+
+                try:
+                    subprocess.run(['score-client',
+                                    '--profile', mapping.get(storage_site),
+                                    'download',
+                                    '--object-id', object_id,
+                                    '--output-dir', cwd,
+                                    '--index', 'false',
+                                    '--force'], check=True)
+                except Exception as e:
+                    sys.exit('\n%s: Download object failed: %s' % (e, object_id))
+
+                file_with_path.append(os.path.join(cwd, _file.get('name')))
+
+            elif file_path.startswith('file://'):
+                file_with_path.append(os.path.join(cwd, file_path.strip('file://'), _file.get('name')))
+
+            else:
+                sys.exit('\n Unrecognized file path!')
+
+
+        # detect whether there are more than two fastq files for each read_group
+        if not len(file_with_path) == 2:
+            sys.exit('\nThe number of fastq files is not equal to 2 for %s' % read_group_id)
+
+        # convert pair end fastq to unaligned and lane level bam sorted by query name
+        output_dir = os.path.join(cwd, 'lane_unaligned')
+        if not os.path.isdir(output_dir): os.makedirs(output_dir)
+
+        try:
+            subprocess.run(['java', '-jar', picard,
+                            'FastqToSam', 'FASTQ=%s' % file_with_path[0],
+                            'FASTQ2=%s' % file_with_path[1],
+                            'OUTPUT=%s' % os.path.join(output_dir, read_group_id + '.bam'),
+                            'READ_GROUP_NAME=%s' % read_group_id,
+                            'SAMPLE_NAME=%s' % metadata.get('submitter_sample_id'),
+                            'LIBRARY_NAME=%s' % rg.get('library_name'),
+                            'PLATFORM_UNIT=%s' % rg.get('platform_unit'),
+                            'PLATFORM=%s' % rg.get('sequencing_platform'),
+                            'SEQUENCING_CENTER=%s' % rg.get('sequencing_center'),
+                            'PREDICTED_INSERT_SIZE=%s' % rg.get('insert_size'),
+                            'PLATFORM_MODEL=%s' % rg.get('platform_model'),
+                            'RUN_DATE=%s' % rg.get('sequencing_date'),
+                            'COMMENT=dcc_project_code:%s' % metadata.get('dcc_project_code'),
+                            'COMMENT=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
+                            'COMMENT=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
+                            'COMMENT=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
+                            'COMMENT=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
+                            'COMMENT=library_strategy:%s' % metadata.get('library_strategy'),
+                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
+        except Exception as e:
+            sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[1]))
+
+        output_bams['bams'].append(os.path.join(output_dir, read_group_id + '.bam'))
+
+else:
+    sys.exit('\n%s: Input files format are not FASTQ or BAM')
+
+
+with open("output.json", "w") as o:
+    o.write(json.dumps(output_bams))
