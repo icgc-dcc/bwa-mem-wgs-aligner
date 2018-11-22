@@ -164,7 +164,7 @@ tools:
       dockstore_cwl_runner.py --dockstore_tool_url ${pcawg_aligner_dockstore_url} \
         --reads ${sep=',' lane_bams} \
         --output_dir datastore \
-        --output_file_basename pcawg2-wgs.${uuid()} \
+        --output_file_basename pcawg2-wgs \
         --download_reference_files false \
         --reference_gz_amb ${reference_gz_amb} \
         --reference_gz_sa ${reference_gz_sa} \
