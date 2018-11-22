@@ -131,7 +131,7 @@ if input_format == 'BAM':
         file_name = _file.get('name')
 
         if file_path.startswith('song://'):
-            storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
+            storage_site, analysis_id, object_id = file_path.replace('song://', '').split('/')
 
             try:
                 subprocess.run(['score-client',
@@ -147,7 +147,11 @@ if input_format == 'BAM':
             file_with_path = os.path.join(cwd, file_name)
 
         elif file_path.startswith('file://'):
-            file_with_path = os.path.join(cwd, file_path.strip('file://'), file_name)
+            file_path = file_path.replace('file://', '')
+            if file_path.startswith('/'):
+                file_with_path = os.path.join(file_path, file_name)
+            else:
+                file_with_path = os.path.join(cwd, file_path, file_name)
 
         else:
             sys.exit('\n Unrecognized file path!')
@@ -244,7 +248,7 @@ elif input_format == 'FASTQ':
             file_path = _file.get('path')
 
             if file_path.startswith('song://'):
-                storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
+                storage_site, analysis_id, object_id = file_path.replace('song://', '').split('/')
 
                 try:
                     subprocess.run(['score-client',
@@ -260,7 +264,12 @@ elif input_format == 'FASTQ':
                 file_with_path.append(os.path.join(cwd, _file.get('name')))
 
             elif file_path.startswith('file://'):
-                file_with_path.append(os.path.join(cwd, file_path.strip('file://'), _file.get('name')))
+                file_path = file_path.replace('file://', '')
+                if file_path.startswith('/'):
+                    file_with_path.append(os.path.join(file_path, _file.get('name')))
+                else:
+                    file_with_path.append(os.path.join(cwd, file_path, _file.get('name')))
+
 
             else:
                 sys.exit('\n Unrecognized file path!')
