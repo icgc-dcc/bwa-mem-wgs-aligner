@@ -165,7 +165,7 @@ tools:
         --reads ${sep=',' lane_bams} \
         --output_dir datastore \
         --output_file_basename pcawg2-wgs \
-        --download_reference_files false \
+        --download_reference_files False \
         --reference_gz_amb ${reference_gz_amb} \
         --reference_gz_sa ${reference_gz_sa} \
         --reference_gz_pac ${reference_gz_pac} \
