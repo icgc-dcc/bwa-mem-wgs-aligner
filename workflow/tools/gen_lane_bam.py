@@ -129,18 +129,28 @@ if input_format == 'BAM':
     for _file in files:
         file_path = _file.get('path')
         file_name = _file.get('name')
-        storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
 
-        try:
-            subprocess.run(['score-client',
-                                     '--profile', mapping.get(storage_site),
-                                     'download',
-                                     '--object-id', object_id,
-                                     '--output-dir', cwd,
-                                     '--index', 'false',
-                                     '--force'], check=True)
-        except Exception as e:
-            sys.exit('\n%s: Download object failed: %s' % (e, object_id))
+        if file_path.startswith('song://'):
+            storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
+
+            try:
+                subprocess.run(['score-client',
+                                         '--profile', mapping.get(storage_site),
+                                         'download',
+                                         '--object-id', object_id,
+                                         '--output-dir', cwd,
+                                         '--index', 'false',
+                                         '--force'], check=True)
+            except Exception as e:
+                sys.exit('\n%s: Download object failed: %s' % (e, object_id))
+
+            file_with_path = os.path.join(cwd, file_name)
+
+        elif file_path.startswith('file://'):
+            file_with_path = os.path.join(cwd, file_path.strip('file://'), file_name)
+
+        else:
+            sys.exit('\n Unrecognized file path!')
 
         # get all the rg for the _file
         rg_yaml = set()
@@ -160,10 +170,10 @@ if input_format == 'BAM':
 
         # retrieve the @RG from BAM header
         try:
-            header = subprocess.check_output(['samtools', 'view', '-H', os.path.join(cwd, file_name)])
+            header = subprocess.check_output(['samtools', 'view', '-H', file_with_path])
 
         except Exception as e:
-            sys.exit('\n%s: Retrieve BAM header failed: %s' % (e, os.path.join(cwd, file_name)))
+            sys.exit('\n%s: Retrieve BAM header failed: %s' % (e, file_with_path))
 
         # get @RG
         header_array = header.decode('utf-8').rstrip().split('\n')
@@ -183,10 +193,10 @@ if input_format == 'BAM':
         if not os.path.isdir(output_dir): os.makedirs(output_dir)
         try:
             subprocess.run(['java', '-jar', picard,
-                            'RevertSam', 'I=%s' % os.path.join(cwd, file_name),
+                            'RevertSam', 'I=%s' % file_with_path,
                             'OUTPUT_BY_READGROUP=true', 'O=%s' % output_dir], check=True)
         except Exception as e:
-            sys.exit('\n%s: RevertSam failed: %s' %(e, os.path.join(cwd, file_name)))
+            sys.exit('\n%s: RevertSam failed: %s' %(e, file_with_path))
 
 
         # detect if read_group replacement are needed
@@ -217,7 +227,7 @@ if input_format == 'BAM':
                                 'C=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                                 'C=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                                 'C=library_strategy:%s' % metadata.get('library_strategy'),
-                                'C=use_cntl:%s' % metadata.get('use_cntl', None)], check=True)
+                                'C=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
             except Exception as e:
                 sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
 
@@ -229,26 +239,36 @@ elif input_format == 'FASTQ':
     for rg in read_groups:
         read_group_id = rg.get('read_group_id')
         files = rg.get('files')
-        file_name = []
+        file_with_path = []
         for _file in files:
             file_path = _file.get('path')
-            file_name.append(_file.get('name'))
-            storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
 
-            try:
-                subprocess.run(['score-client',
-                                         '--profile', mapping.get(storage_site),
-                                         'download',
-                                         '--object-id', object_id,
-                                         '--output-dir', cwd,
-                                         '--index', 'false',
-                                         '--force'], check=True)
-            except Exception as e:
-                sys.exit('\n%s: Download object failed: %s' % (e, object_id))
+            if file_path.startswith('song://'):
+                storage_site, analysis_id, object_id = file_path.strip('song://').split('/')
+
+                try:
+                    subprocess.run(['score-client',
+                                    '--profile', mapping.get(storage_site),
+                                    'download',
+                                    '--object-id', object_id,
+                                    '--output-dir', cwd,
+                                    '--index', 'false',
+                                    '--force'], check=True)
+                except Exception as e:
+                    sys.exit('\n%s: Download object failed: %s' % (e, object_id))
+
+                file_with_path.append(os.path.join(cwd, _file.get('name')))
+
+            elif file_path.startswith('file://'):
+                file_with_path.append(os.path.join(cwd, file_path.strip('file://'), _file.get('name')))
+
+            else:
+                sys.exit('\n Unrecognized file path!')
+
 
         # detect whether there are more than two fastq files for each read_group
-        if not len(file_name) == 2:
-            sys.exit('\n%s: The number of fastq files is not equal to 2 for %s' % (e, read_group_id))
+        if not len(file_with_path) == 2:
+            sys.exit('\nThe number of fastq files is not equal to 2 for %s' % read_group_id)
 
         # convert pair end fastq to unaligned and lane level bam sorted by query name
         output_dir = os.path.join(cwd, 'lane_unaligned')
@@ -256,8 +276,8 @@ elif input_format == 'FASTQ':
 
         try:
             subprocess.run(['java', '-jar', picard,
-                            'FastqToSam', 'FASTQ=%s' % os.path.join(cwd, file_name[0]),
-                            'FASTQ2=%s' % os.path.join(cwd, file_name[1]),
+                            'FastqToSam', 'FASTQ=%s' % file_with_path[0],
+                            'FASTQ2=%s' % file_with_path[1],
                             'OUTPUT=%s' % os.path.join(output_dir, read_group_id + '.bam'),
                             'READ_GROUP_NAME=%s' % read_group_id,
                             'SAMPLE_NAME=%s' % metadata.get('submitter_sample_id'),
@@ -274,9 +294,9 @@ elif input_format == 'FASTQ':
                             'COMMENT=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                             'COMMENT=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                             'COMMENT=library_strategy:%s' % metadata.get('library_strategy'),
-                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', None)], check=True)
+                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'test')], check=True)
         except Exception as e:
-            sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, os.path.join(cwd, file_name[0]), os.path.join(cwd, file_name[0])))
+            sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[0]))
 
         output_bams['bams'].append(os.path.join(output_dir, read_group_id + '.bam'))
 
