@@ -25,7 +25,7 @@ cwltool --make-template pcawg-bwa-mem.cwl > input.yaml
 """
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--dockstore_tool_url', dest='dockstore_tool_url', nargs='+', help='CWL tool URL',default="https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/2.6.8_1.3/Dockstore.cwl")
+parser.add_argument('--dockstore_tool_url', dest='dockstore_tool_url', help='CWL tool URL',default="https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/2.6.8_1.3/Dockstore.cwl")
 parser.add_argument('--output_dir', dest='output_dir', type=str, help='Output directory', required=True)
 parser.add_argument('--reads', dest='reads', nargs='+', help='List of reads', required=True)
 parser.add_argument('--output_file_basename', dest='output_file_basename', type=str, help='Output file basename', required=True)
