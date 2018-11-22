@@ -294,9 +294,9 @@ elif input_format == 'FASTQ':
                             'COMMENT=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                             'COMMENT=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                             'COMMENT=library_strategy:%s' % metadata.get('library_strategy'),
-                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'test')], check=True)
+                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
         except Exception as e:
-            sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[0]))
+            sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[1]))
 
         output_bams['bams'].append(os.path.join(output_dir, read_group_id + '.bam'))
 
