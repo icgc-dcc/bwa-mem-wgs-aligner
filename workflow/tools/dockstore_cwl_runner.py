@@ -71,7 +71,7 @@ input_json['reference_gz_sa']['path'] = args.reference_gz_sa
 with open('job.json', 'w') as fp:
   json.dump(input_json,fp, indent=4, sort_keys=True)
 
-subprocess.call(['cwltool','pcawg-bwa-mem.cwl','job.json'])
+subprocess.check_output(['cwltool','pcawg-bwa-mem.cwl','job.json'])
 
 output_path = os.path.join(os.path.abspath(args.output_dir),args.output_file_basename)
 
