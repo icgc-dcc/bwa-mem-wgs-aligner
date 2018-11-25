@@ -73,7 +73,7 @@ with open('job.json', 'w') as fp:
 
 subprocess.check_output(['cwltool','--non-strict','--debug','pcawg-bwa-mem.cwl','job.json'])
 
-output_path = os.path.join(os.path.abspath(args.output_dir),args.output_file_basename)
+output_path = os.path.join(os.getcwd(), args.output_file_basename)
 
 with open("output.json", "w") as o:
   json.dump({
