@@ -11,21 +11,18 @@ import os
 This is fairly general approach, it could be a univeral tool that
 runs all PCAWG workflows defined in CWL
 
-1. download CWL workflow definition from Dockstore
-wget -O pcawg-bwa-mem.cwl dockstore_tool_url
-
-2. generate input yaml template
+1. generate input yaml template
 cwltool --make-template pcawg-bwa-mem.cwl > input.yaml
 
-3. populate input.yaml with parameters provided from the arguments
+2. populate input.yaml with parameters provided from the arguments
 
-4. launch cwltool to run workflow
+3. launch cwltool to run workflow
 
-5. report output
+4. report output
 """
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--dockstore_tool_url', dest='dockstore_tool_url', help='CWL tool URL',default="https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/2.6.8_1.3/Dockstore.cwl")
+parser.add_argument('--cwl_file', dest='cwl_file', help='CWL file')
 parser.add_argument('--output_dir', dest='output_dir', type=str, help='Output directory', required=True)
 parser.add_argument('--reads', dest='reads', nargs='+', help='List of reads', required=True)
 parser.add_argument('--output_file_basename', dest='output_file_basename', type=str, help='Output file basename', required=True)
@@ -39,16 +36,10 @@ parser.add_argument('--reference_gz_fai', dest='reference_gz_fai', help='Referen
 parser.add_argument('--reference_gz', dest='reference_gz', help='Reference genome gz', required=True)
 
 
-
-
 args = parser.parse_args()
 
-
-with open('pcawg-bwa-mem.cwl','wb') as f:
-  f.write(requests.get(args.dockstore_tool_url).content)
-
 with open('input.yaml', 'w') as f:
-  subprocess.call(['cwltool','--make-template','pcawg-bwa-mem.cwl'], stdout=f)
+  subprocess.call(['cwltool', '--make-template', cwl_file], stdout=f)
 
 input_json = yaml.load(open('input.yaml'))
 input_json['reference_gz_sa']['path'] = args.reference_gz_sa
@@ -71,7 +62,7 @@ input_json['reference_gz_sa']['path'] = args.reference_gz_sa
 with open('job.json', 'w') as fp:
   json.dump(input_json,fp, indent=4, sort_keys=True)
 
-subprocess.check_output(['cwltool','--non-strict','--debug','pcawg-bwa-mem.cwl','job.json'])
+subprocess.check_output(['cwltool', '--non-strict', '--debug', cwl_file, 'job.json'])
 
 output_path = os.path.join(os.getcwd(), args.output_file_basename)
 
