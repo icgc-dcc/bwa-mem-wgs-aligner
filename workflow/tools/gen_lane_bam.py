@@ -146,8 +146,8 @@ if input_format == 'BAM':
 
             file_with_path = os.path.join(cwd, file_name)
 
-        elif file_path.startswith('file://'):
-            file_path = file_path.replace('file://', '')
+        elif file_path.startswith('file://'): # file_path provides file_name not only the path information
+            file_path = os.path.dirname(file_path.replace('file://', ''))
             if file_path.startswith('/'):
                 file_with_path = os.path.join(file_path, file_name)
             else:
@@ -155,6 +155,9 @@ if input_format == 'BAM':
 
         else:
             sys.exit('\n Unrecognized file path!')
+
+        # check whether the download files exist
+        if not os.path.isfile(file_with_path): sys.exit('\n The downloaded file: %s do not exist!' % file_with_path)
 
         # get all the rg for the _file
         rg_yaml = set()
@@ -214,9 +217,12 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(output_dir, rg_old+'.bam')))
 
+            try:
+                os.remove(os.path.join(output_dir, rg_old+'.bam'))
+            except:
+                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg_old + '.bam')))
 
         # add comments to lane-level bams
-
         for rg in _file.get('read_groups'):
             try:
                 subprocess.run(['java', '-jar', picard,
@@ -231,6 +237,12 @@ if input_format == 'BAM':
                                 'C=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
             except Exception as e:
                 sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+
+            try:
+                os.remove(os.path.join(output_dir, rg.get('read_group_id')+'.bam'))
+            except:
+                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+
 
             output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'))
 
@@ -261,7 +273,7 @@ elif input_format == 'FASTQ':
                 file_with_path.append(os.path.join(cwd, _file.get('name')))
 
             elif file_path.startswith('file://'):
-                file_path = file_path.replace('file://', '')
+                file_path = os.path.dirname(file_path.replace('file://', ''))
                 if file_path.startswith('/'):
                     file_with_path.append(os.path.join(file_path, _file.get('name')))
                 else:
@@ -275,6 +287,10 @@ elif input_format == 'FASTQ':
         # detect whether there are more than two fastq files for each read_group
         if not len(file_with_path) == 2:
             sys.exit('\nThe number of fastq files is not equal to 2 for %s' % read_group_id)
+
+        # check whether the download files exist
+        for f in file_with_path:
+            if not os.path.isfile(f): sys.exit('\n The downloaded file: %s do not exist!' % f)
 
         # convert pair end fastq to unaligned and lane level bam sorted by query name
         output_dir = os.path.join(cwd, 'lane_unaligned')
