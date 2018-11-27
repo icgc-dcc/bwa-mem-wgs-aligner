@@ -24,7 +24,8 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     pcawg_aligner_dockstore_url:
       type: string
-      default: "https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.8_1.4/plain-CWL/descriptor/Dockstore.cwl"
+      is_file: true
+      default: "[pcawg-bwa-mem.cwl]https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.8_1.4/plain-CWL/descriptor/Dockstore.cwl"
     reference_gz_amb:
       type: string
       is_file: true
@@ -70,7 +71,7 @@ workflow:
     pcawg_aligner:
       tool: pcawg_aligner
       input:
-        pcawg_aligner_dockstore_url: pcawg_aligner_dockstore_url
+        cwl_file: pcawg_aligner_dockstore_url
         lane_bams: bams@gen_lane_bam
         reference_gz_amb: reference_gz_amb
         reference_gz_sa: reference_gz_sa
@@ -161,7 +162,7 @@ tools:
 
   pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
     command: |
-      dockstore_cwl_runner.py --dockstore_tool_url ${pcawg_aligner_dockstore_url} \
+      dockstore_cwl_runner.py --cwl_file ${cwl_file} \
         --reads ${sep=' ' lane_bams} \
         --output_dir datastore \
         --output_file_basename pcawg2-wgs \
@@ -173,8 +174,9 @@ tools:
         --reference_gz_fai ${reference_gz_fai} \
         --reference_gz ${reference_gz}
     input:
-      pcawg_aligner_dockstore_url:
+      cwl_file:
         type: string
+        is_file: true
       lane_bams:
         type: array
         items:
