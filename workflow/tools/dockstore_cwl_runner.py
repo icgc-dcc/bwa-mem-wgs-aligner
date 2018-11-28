@@ -40,7 +40,7 @@ parser.add_argument('--reference_gz', dest='reference_gz', help='Reference genom
 args = parser.parse_args()
 
 with open('input.yaml', 'w') as f:
-  subprocess.call(['cwltool', '--make-template', cwl_file], stdout=f)
+  subprocess.call(['cwltool', '--make-template', args.cwl_file], stdout=f)
 
 input_json = yaml.load(open('input.yaml'))
 input_json['reference_gz_sa']['path'] = args.reference_gz_sa
@@ -63,7 +63,7 @@ input_json['reference_gz_sa']['path'] = args.reference_gz_sa
 with open('job.json', 'w') as fp:
   json.dump(input_json,fp, indent=4, sort_keys=True)
 
-subprocess.check_output(['cwltool', '--non-strict', '--debug', cwl_file, 'job.json'])
+subprocess.check_output(['cwltool', '--non-strict', '--debug', args.cwl_file, 'job.json'])
 
 output_path = os.path.join(os.getcwd(), args.output_file_basename)
 
