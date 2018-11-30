@@ -228,14 +228,14 @@ if input_format == 'BAM':
             try:
                 subprocess.run(['java', '-jar', picard,
                                 'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.new.bam'),
-                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.reheader.bam'),
+                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'),
                                 'C=dcc_project_code:%s' % metadata.get('dcc_project_code'),
                                 'C=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
                                 'C=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
                                 'C=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                                 'C=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                                 'C=library_strategy:%s' % metadata.get('library_strategy'),
-                                'C=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
+                                'C=use_cntl:%s' % metadata.get('use_cntl', 'NA')], check=True)
             except Exception as e:
                 sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.new.bam')))
 
@@ -245,7 +245,7 @@ if input_format == 'BAM':
                 sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg.get('read_group_id')+'.new.bam')))
 
 
-            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.reheader.bam'))
+            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'))
 
 elif input_format == 'FASTQ':
     metadata = input_metadata
@@ -301,7 +301,7 @@ elif input_format == 'FASTQ':
             subprocess.run(['java', '-jar', picard,
                             'FastqToSam', 'FASTQ=%s' % file_with_path[0],
                             'FASTQ2=%s' % file_with_path[1],
-                            'OUTPUT=%s' % os.path.join(output_dir, read_group_id + '.bam'),
+                            'OUTPUT=%s' % os.path.join(output_dir, read_group_id.replace(':', '_') + '.lane.bam'),
                             'READ_GROUP_NAME=%s' % read_group_id,
                             'SAMPLE_NAME=%s' % metadata.get('submitter_sample_id'),
                             'LIBRARY_NAME=%s' % rg.get('library_name'),
@@ -317,11 +317,11 @@ elif input_format == 'FASTQ':
                             'COMMENT=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                             'COMMENT=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                             'COMMENT=library_strategy:%s' % metadata.get('library_strategy'),
-                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
+                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'NA')], check=True)
         except Exception as e:
             sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[1]))
 
-        output_bams['bams'].append(os.path.join(output_dir, read_group_id + '.bam'))
+        output_bams['bams'].append(os.path.join(output_dir, read_group_id.replace(':', '_') + '.lane.bam'))
 
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
