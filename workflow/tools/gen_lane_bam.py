@@ -199,7 +199,7 @@ if input_format == 'BAM':
         output_dir = os.path.join(cwd, 'lane_unaligned')
         if not os.path.isdir(output_dir): os.makedirs(output_dir)
         try:
-            subprocess.run(['java', '-Xmx8G', '-jar', picard,
+            subprocess.run(['java', '-jar', picard,
                             'RevertSam', 'I=%s' % file_with_path,
                             'OUTPUT_BY_READGROUP=true', 'O=%s' % output_dir], check=True)
         except Exception as e:
