@@ -194,11 +194,12 @@ if input_format == 'BAM':
         # compare the RG ids
         if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
 
+
         # Revert the bam to unaligned and lane level bam sorted by query name
         output_dir = os.path.join(cwd, 'lane_unaligned')
         if not os.path.isdir(output_dir): os.makedirs(output_dir)
         try:
-            subprocess.run(['java', '-jar', picard,
+            subprocess.run(['java', '-Xmx8G', '-jar', picard,
                             'RevertSam', 'I=%s' % file_with_path,
                             'OUTPUT_BY_READGROUP=true', 'O=%s' % output_dir], check=True)
         except Exception as e:
@@ -210,7 +211,7 @@ if input_format == 'BAM':
             try:
                 subprocess.run(['java', '-jar', picard,
                                 'AddOrReplaceReadGroups', 'I=%s' % os.path.join(output_dir, rg_old+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.bam'),
+                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.new.bam'),
                                 'RGID=%s' % rg_new.get('ID'), 'RGLB=%s' % rg_new.get('LB'), 'RGPL=%s' % rg_new.get('PL'),
                                 'RGPU=%s' % rg_new.get('PU'), 'RGSM=%s' % rg_new.get('SM'), 'RGPM=%s' % rg_new.get('PM'),
                                 'RGCN=%s' % rg_new.get('CN'), 'RGPI=%s' % rg_new.get('PI'), 'RGDT=%s' % rg_new.get('DT')], check=True)
@@ -219,15 +220,15 @@ if input_format == 'BAM':
 
             try:
                 os.remove(os.path.join(output_dir, rg_old+'.bam'))
-            except:
+            except Exception as e:
                 sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg_old + '.bam')))
 
         # add comments to lane-level bams
         for rg in _file.get('read_groups'):
             try:
                 subprocess.run(['java', '-jar', picard,
-                                'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'),
+                                'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.new.bam'),
+                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.reheader.bam'),
                                 'C=dcc_project_code:%s' % metadata.get('dcc_project_code'),
                                 'C=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
                                 'C=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
@@ -236,15 +237,15 @@ if input_format == 'BAM':
                                 'C=library_strategy:%s' % metadata.get('library_strategy'),
                                 'C=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
             except Exception as e:
-                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.new.bam')))
 
             try:
-                os.remove(os.path.join(output_dir, rg.get('read_group_id')+'.bam'))
-            except:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+                os.remove(os.path.join(output_dir, rg.get('read_group_id')+'.new.bam'))
+            except Exception as e:
+                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg.get('read_group_id')+'.new.bam')))
 
 
-            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'))
+            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.reheader.bam'))
 
 elif input_format == 'FASTQ':
     metadata = input_metadata
