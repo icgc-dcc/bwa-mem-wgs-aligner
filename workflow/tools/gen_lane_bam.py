@@ -168,7 +168,7 @@ if input_format == 'BAM':
                                                    'LB': rg.get('library_name'),
                                                    'PL': rg.get('sequencing_platform'),
                                                    'PU': rg.get('platform_unit'),
-                                                   'SM': metadata.get('submitter_sample_id'),
+                                                   'SM': metadata.get('aliquot_id'),
                                                    'PM': rg.get('platform_model'),
                                                    'CN': rg.get('sequencing_center'),
                                                    'PI': rg.get('insert_size'),
@@ -194,6 +194,7 @@ if input_format == 'BAM':
         # compare the RG ids
         if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
 
+
         # Revert the bam to unaligned and lane level bam sorted by query name
         output_dir = os.path.join(cwd, 'lane_unaligned')
         if not os.path.isdir(output_dir): os.makedirs(output_dir)
@@ -210,7 +211,7 @@ if input_format == 'BAM':
             try:
                 subprocess.run(['java', '-jar', picard,
                                 'AddOrReplaceReadGroups', 'I=%s' % os.path.join(output_dir, rg_old+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.bam'),
+                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.new.bam'),
                                 'RGID=%s' % rg_new.get('ID'), 'RGLB=%s' % rg_new.get('LB'), 'RGPL=%s' % rg_new.get('PL'),
                                 'RGPU=%s' % rg_new.get('PU'), 'RGSM=%s' % rg_new.get('SM'), 'RGPM=%s' % rg_new.get('PM'),
                                 'RGCN=%s' % rg_new.get('CN'), 'RGPI=%s' % rg_new.get('PI'), 'RGDT=%s' % rg_new.get('DT')], check=True)
@@ -219,32 +220,32 @@ if input_format == 'BAM':
 
             try:
                 os.remove(os.path.join(output_dir, rg_old+'.bam'))
-            except:
+            except Exception as e:
                 sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg_old + '.bam')))
 
         # add comments to lane-level bams
         for rg in _file.get('read_groups'):
             try:
                 subprocess.run(['java', '-jar', picard,
-                                'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'),
+                                'AddCommentsToBam', 'I=%s' % os.path.join(output_dir, rg.get('read_group_id')+'.new.bam'),
+                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'),
                                 'C=dcc_project_code:%s' % metadata.get('dcc_project_code'),
                                 'C=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
                                 'C=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
                                 'C=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                                 'C=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                                 'C=library_strategy:%s' % metadata.get('library_strategy'),
-                                'C=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
+                                'C=use_cntl:%s' % metadata.get('use_cntl', 'NA')], check=True)
             except Exception as e:
-                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(output_dir, rg.get('read_group_id')+'.new.bam')))
 
             try:
-                os.remove(os.path.join(output_dir, rg.get('read_group_id')+'.bam'))
-            except:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg.get('read_group_id')+'.bam')))
+                os.remove(os.path.join(output_dir, rg.get('read_group_id')+'.new.bam'))
+            except Exception as e:
+                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(output_dir, rg.get('read_group_id')+'.new.bam')))
 
 
-            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id')+'.reheader.bam'))
+            output_bams['bams'].append(os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'))
 
 elif input_format == 'FASTQ':
     metadata = input_metadata
@@ -300,9 +301,9 @@ elif input_format == 'FASTQ':
             subprocess.run(['java', '-jar', picard,
                             'FastqToSam', 'FASTQ=%s' % file_with_path[0],
                             'FASTQ2=%s' % file_with_path[1],
-                            'OUTPUT=%s' % os.path.join(output_dir, read_group_id + '.bam'),
+                            'OUTPUT=%s' % os.path.join(output_dir, read_group_id.replace(':', '_') + '.lane.bam'),
                             'READ_GROUP_NAME=%s' % read_group_id,
-                            'SAMPLE_NAME=%s' % metadata.get('submitter_sample_id'),
+                            'SAMPLE_NAME=%s' % metadata.get('aliquot_id'),
                             'LIBRARY_NAME=%s' % rg.get('library_name'),
                             'PLATFORM_UNIT=%s' % rg.get('platform_unit'),
                             'PLATFORM=%s' % rg.get('sequencing_platform'),
@@ -316,11 +317,11 @@ elif input_format == 'FASTQ':
                             'COMMENT=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
                             'COMMENT=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
                             'COMMENT=library_strategy:%s' % metadata.get('library_strategy'),
-                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'N/A')], check=True)
+                            'COMMENT=use_cntl:%s' % metadata.get('use_cntl', 'NA')], check=True)
         except Exception as e:
             sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[1]))
 
-        output_bams['bams'].append(os.path.join(output_dir, read_group_id + '.bam'))
+        output_bams['bams'].append(os.path.join(output_dir, read_group_id.replace(':', '_') + '.lane.bam'))
 
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
