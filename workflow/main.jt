@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.14"
+  version: "0.0.15"
 
   env_var:
     SCORE_TOKEN:
