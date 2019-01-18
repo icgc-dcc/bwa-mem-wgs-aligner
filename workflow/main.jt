@@ -105,7 +105,7 @@ workflow:
       tool: pcawg_aligner
       input:
         cwl_file: pcawg_aligner_dockstore_url
-        lane_bams: bams@gen_lane_bam
+        lane_bams: bams@add_comment
         reference_gz_amb: reference_gz_amb
         reference_gz_sa: reference_gz_sa
         reference_gz_pac: reference_gz_pac
