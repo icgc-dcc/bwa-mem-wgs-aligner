@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.13"
+  version: "0.0.14"
 
   env_var:
     SCORE_TOKEN:
@@ -56,16 +56,49 @@ workflow:
       default: "[genome.fa.gz]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz"
 
   tasks:
-    gen_lane_bam:
-      tool: gen_lane_bam
+    download:
+      tool: download
       input:
         metadata_yaml: metadata_yaml
+
+    fastq_to_sam:
+      tool: fastq_to_sam
+      input:
+        metadata_json: metadata_json@download
+        download_files: download_files@download
         picard_jar: picard_jar
+        input_format: input_format@download
+
+    revert_bam:
+      tool: revert_bam
+      input:
+        metadata_json: metadata_json@download
+        download_files: download_files@download
+        picard_jar: picard_jar
+        input_format: input_format@download
+
+    replace_readgroup:
+      tool: replace_readgroup
+      input:
+        metadata_json: metadata_json@download
+        download_files: download_files@download
+        picard_jar: picard_jar
+        input_format: input_format@download
+        unaligned_by_rg_dir: unaligned_by_rg_dir@revert_bam
+
+    add_comment:
+      tool: add_comment
+      input:
+        metadata_json: metadata_json@download
+        bams: bams@fastq_to_sam
+        picard_jar: picard_jar
+        input_format: input_format@download
+        unaligned_rg_replace_dir: unaligned_rg_replace_dir@replace_readgroup
 
     lane_bam_qc:
       tool: lane_bam_qc
       input:
-        lane_bams: bams@gen_lane_bam
+        lane_bams: bams@add_comment
         picard_jar: picard_jar
 
     pcawg_aligner:
@@ -101,15 +134,117 @@ workflow:
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
 tools:
-  gen_lane_bam:
-    command: gen_lane_bam.py ${metadata_yaml} ${picard_jar}
+  download:
+    command: download.py
+
     input:
       metadata_yaml:
+        type: string
+        is_file: true
+
+    output:
+      input_format:
+        type: string
+      metadata_json:
+        type: string
+        is_file: true
+      download_files:
+        type: array
+        items:
+          type: object
+
+  fastq_to_sam:
+    command: fastq_to_sam.py
+
+    input:
+      metadata_json:
         type: string
         is_file: true
       picard_jar:
         type: string
         is_file: true
+      download_files:
+        type: array
+        items:
+          type: object
+      input_format:
+        type: string
+
+    output:
+      bams:
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.bam"
+
+
+  revert_bam:
+    command: revert_bam.py
+
+    input:
+      metadata_json:
+        type: string
+        is_file: true
+      picard_jar:
+        type: string
+        is_file: true
+      download_files:
+        type: array
+        items:
+          type: object
+      input_format:
+        type: string
+
+    output:
+      unaligned_by_rg_dir:
+        type: string
+
+  replace_readgroup:
+    command: replace_readgroup.py
+
+    input:
+      metadata_json:
+        type: string
+        is_file: true
+      picard_jar:
+        type: string
+        is_file: true
+      download_files:
+        type: array
+        items:
+          type: object
+      unaligned_by_rg_dir:
+        type: string
+      input_format:
+        type: string
+
+    output:
+      unaligned_rg_replace_dir:
+        type: string
+
+
+  add_comment:
+    command: add_comment.py
+
+    input:
+      metadata_json:
+        type: string
+        is_file: true
+      picard_jar:
+        type: string
+        is_file: true
+      unaligned_rg_replace_dir:
+        type: string
+      input_format:
+        type: string
+      bams:
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.bam"
+
     output:
       bams:
         type: array
