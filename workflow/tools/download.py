@@ -46,7 +46,7 @@ task_dict = json.loads(sys.argv[1])
 cwd = os.getcwd()
 
 # read the yaml file
-with open(task_dict.get('metadata_yaml'), 'r') as f:
+with open(task_dict['input'].get('metadata_yaml'), 'r') as f:
     input_metadata=yaml.load(f)
 
 mapping = {

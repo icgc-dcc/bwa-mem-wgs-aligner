@@ -14,12 +14,12 @@ task_dict = json.loads(sys.argv[1])
 
 cwd = os.getcwd()
 
-picard = task_dict.get('picard_jar')
-input_format = task_dict.get('input_format')
-download_files = task_dict.get('download_files')
-unaligned_by_rg_dir = task_dict.get('unaligned_by_rg_dir')
+picard = task_dict['input'].get('picard_jar')
+input_format = task_dict['input'].get('input_format')
+download_files = task_dict['input'].get('download_files')
+unaligned_by_rg_dir = task_dict['input'].get('unaligned_by_rg_dir')
 
-with open(task_dict.get('metadata_json'), 'r') as f:
+with open(task_dict['input'].get('metadata_json'), 'r') as f:
     metadata = json.load(f)
 
 output = {

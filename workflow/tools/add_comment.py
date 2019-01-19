@@ -15,15 +15,15 @@ task_dict = json.loads(sys.argv[1])
 
 cwd = os.getcwd()
 
-picard = task_dict.get('picard_jar')
-input_format = task_dict.get('input_format')
-unaligned_rg_replace_dir = task_dict.get('unaligned_rg_replace_dir')
+picard = task_dict['input'].get('picard_jar')
+input_format = task_dict['input'].get('input_format')
+unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
 
-with open(task_dict.get('metadata_json'), 'r') as f:
+with open(task_dict['input'].get('metadata_json'), 'r') as f:
     metadata = json.load(f)
 
 output = {
-    'bams': task_dict.get('bams')
+    'bams': task_dict['input'].get('bams')
 }
 
 # the inputs are BAM
