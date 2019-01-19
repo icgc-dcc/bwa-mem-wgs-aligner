@@ -84,13 +84,34 @@ if input_format == 'BAM':
 
         # do the replacement for all read_groups
         for rg_old, rg_new in rg_replace.items():
+            if 'ID' not in rg_new or str(rg_new.get('ID')) == '':
+                sys.exit('Must specify read_group_id for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
+            rg_args = ['RGID=%s' % rg_new.get('ID')]
+            if 'LB' not in rg_new or str(rg_new.get('LB')) == '':
+                sys.exit('Must specify library_name for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
+            rg_args.append('RGLB=%s' % rg_new.get('LB'))
+            if 'PL' not in rg_new or str(rg_new.get('PL')) == '':
+                sys.exit('Must specify sequencing_platform for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
+            rg_args.append('RGPL=%s' % rg_new.get('PL'))
+            if 'PU' not in rg_new or str(rg_new.get('PU')) == '':
+                sys.exit('Must specify platform_unit for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
+            rg_args.append('RGPU=%s' % rg_new.get('PU'))
+            if 'SM' not in rg_new or str(rg_new.get('SM')) == '':
+                sys.exit('Must specify aliquot_id for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
+            rg_args.append('RGSM=%s' % rg_new.get('SM'))
+            if 'PM' in rg_new and str(rg_new.get('PM')) != '':
+                rg_args.append('RGPM=%s' % rg_new.get('PM'))
+            if 'CN' in rg_new and str(rg_new.get('CN')) != '':
+                rg_args.append('RGCN=%s' % rg_new.get('CN'))
+            if 'PI' in rg_new and isinstance(rg_new.get('PI'), int):
+                rg_args.append('RGPI=%s' % rg_new.get('PI'))
+            if 'DT' in rg_new and re.match('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$', str(rg_new.get('DT'))):
+                rg_args.append('RGDT=%s' % str(rg_new.get('DT')))
+
             try:
                 subprocess.run(['java', '-jar', picard,
                                 'AddOrReplaceReadGroups', 'I=%s' % os.path.join(unaligned_by_rg_dir, rg_old+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.new.bam'),
-                                'RGID=%s' % rg_new.get('ID'), 'RGLB=%s' % rg_new.get('LB'), 'RGPL=%s' % rg_new.get('PL'),
-                                'RGPU=%s' % rg_new.get('PU'), 'RGSM=%s' % rg_new.get('SM'), 'RGPM=%s' % rg_new.get('PM'),
-                                'RGCN=%s' % rg_new.get('CN'), 'RGPI=%s' % rg_new.get('PI'), 'RGDT=%s' % rg_new.get('DT')], check=True)
+                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.new.bam')] + rg_args, check=True)
             except Exception as e:
                 sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old+'.bam')))
 
