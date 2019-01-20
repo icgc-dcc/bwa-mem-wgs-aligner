@@ -15,19 +15,19 @@ task_dict = json.loads(sys.argv[1])
 
 cwd = os.getcwd()
 
-picard = task_dict['input'].get('picard_jar')
-input_format = task_dict['input'].get('input_format')
-unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
-
-with open(task_dict['input'].get('metadata_json'), 'r') as f:
-    metadata = json.load(f)
-
 output = {
-    'bams': task_dict['input'].get('bams')
+    'bams': []
 }
 
 # the inputs are BAM
 if input_format == 'BAM':
+    picard = task_dict['input'].get('picard_jar')
+    input_format = task_dict['input'].get('input_format')
+    unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
+
+    with open(task_dict['input'].get('metadata_json'), 'r') as f:
+        metadata = json.load(f)
+
     files = metadata.get('files')
     output_dir = os.path.join(cwd, 'lane_unaligned')
     if not os.path.isdir(output_dir): os.makedirs(output_dir)
@@ -58,9 +58,7 @@ if input_format == 'BAM':
             output['bams'].append(os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'))
 
 elif input_format == 'FASTQ':
-    # sleep 60 seconds and pass through the parameters
-    time.sleep(60)
-    pass
+    output['bams'] = task_dict['input'].get('bams')
 
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
