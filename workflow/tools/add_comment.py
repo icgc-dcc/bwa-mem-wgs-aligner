@@ -12,6 +12,7 @@ Major steps:
 """
 
 task_dict = json.loads(sys.argv[1])
+input_format = task_dict['input'].get('input_format')
 
 cwd = os.getcwd()
 
@@ -22,7 +23,6 @@ output = {
 # the inputs are BAM
 if input_format == 'BAM':
     picard = task_dict['input'].get('picard_jar')
-    input_format = task_dict['input'].get('input_format')
     unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
 
     with open(task_dict['input'].get('metadata_json'), 'r') as f:
