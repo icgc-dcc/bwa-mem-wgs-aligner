@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import subprocess
 import sys
 import json
@@ -52,8 +53,7 @@ if input_format == 'BAM':
                                                    'PI': rg.get('insert_size'),
                                                    'DT': rg.get('sequencing_date')}
 
-        for bam in download_files:
-            bam_dict = json.loads(bam)
+        for bam_dict in download_files:
             if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:
                 file_with_path = bam_dict.get('local_path')
                 break
