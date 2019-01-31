@@ -5,6 +5,7 @@ import subprocess
 import sys
 import json
 import time
+import datetime
 
 """
 Major steps:
@@ -20,13 +21,27 @@ output = {
     'bams': []
 }
 
+with open(task_dict['input'].get('metadata_json'), 'r') as f:
+    metadata = json.load(f)
+
+case_map = {
+    'dccProjectCode': 'dcc_project_code',
+    'submitterDonorId': 'submitter_donor_id',
+    'submitterSpecimenId': 'submitter_specimen_id',
+    'submitterSampleId': 'submitter_sample_id',
+    'dccSpecimenType': 'dcc_specimen_type',
+    'libraryStrategy': 'library_strategy',
+    'useCntl': 'use_cntl'
+}
+
 # the inputs are BAM
 if input_format == 'BAM':
     picard = task_dict['input'].get('picard_jar')
     unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
 
-    with open(task_dict['input'].get('metadata_json'), 'r') as f:
-        metadata = json.load(f)
+    rg_args = []
+    for ct in ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'dccSpecimenType', 'libraryStrategy', 'useCntl']:
+        rg_args.append('C=%s:%s' % (case_map.get(ct), metadata.get(ct)))
 
     files = metadata.get('files')
     output_dir = os.path.join(cwd, 'lane_unaligned')
@@ -34,35 +49,30 @@ if input_format == 'BAM':
 
     for _file in files:
         # add comments to lane-level bams
-        for rg in _file.get('read_groups'):
+        for rg in _file.get('readGroups'):
             try:
                 subprocess.run(['java', '-jar', picard,
-                                'AddCommentsToBam', 'I=%s' % os.path.join(unaligned_rg_replace_dir, rg.get('read_group_id')+'.new.bam'),
-                                'O=%s' % os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'),
-                                'C=dcc_project_code:%s' % metadata.get('dcc_project_code'),
-                                'C=submitter_donor_id:%s' % metadata.get('submitter_donor_id'),
-                                'C=submitter_specimen_id:%s' % metadata.get('submitter_specimen_id'),
-                                'C=submitter_sample_id:%s' % metadata.get('submitter_sample_id'),
-                                'C=dcc_specimen_type:%s' % metadata.get('dcc_specimen_type'),
-                                'C=library_strategy:%s' % metadata.get('library_strategy'),
-                                'C=use_cntl:%s' % metadata.get('use_cntl', 'NA')], check=True)
+                                'AddCommentsToBam', 'I=%s' % os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'),
+                                'O=%s' % os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam')] + rg_args, check=True)
             except Exception as e:
-                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(unaligned_rg_replace_dir, rg.get('read_group_id')+'.new.bam')))
+                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
 
             try:
-                os.remove(os.path.join(unaligned_rg_replace_dir, rg.get('read_group_id')+'.new.bam'))
+                os.remove(os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'))
             except Exception as e:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_rg_replace_dir, rg.get('read_group_id')+'.new.bam')))
+                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
 
 
-            output['bams'].append(os.path.join(output_dir, rg.get('read_group_id').replace(':', '_')+'.lane.bam'))
+            output['bams'].append(os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam'))
 
 elif input_format == 'FASTQ':
+    time.sleep(60)
     output['bams'] = task_dict['input'].get('bams')
 
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
 
+output['aligned_bam_basename'] = '.'.join([metadata.get('aliquotId'), str(len(output['bams'])), datetime.date.today().strftime("%Y%m%d"), 'wgs', 'grch37'])
 
 with open("output.json", "w") as o:
     o.write(json.dumps(output))
