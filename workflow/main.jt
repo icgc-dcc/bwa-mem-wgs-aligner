@@ -106,6 +106,7 @@ workflow:
       input:
         cwl_file: pcawg_aligner_dockstore_url
         lane_bams: bams@add_comment
+        output_file_basename: aligned_bam_basename@add_comment
         reference_gz_amb: reference_gz_amb
         reference_gz_sa: reference_gz_sa
         reference_gz_pac: reference_gz_pac
@@ -246,6 +247,8 @@ tools:
           glob_pattern: "*.bam"
 
     output:
+      aligned_bam_basename:
+        type: string
       bams:
         type: array
         items:
@@ -300,7 +303,7 @@ tools:
       dockstore_cwl_runner.py --cwl_file ${cwl_file} \
         --reads ${sep=' ' lane_bams} \
         --output_dir datastore \
-        --output_file_basename pcawg2-wgs \
+        --output_file_basename {output_file_basename} \
         --reference_gz_amb ${reference_gz_amb} \
         --reference_gz_sa ${reference_gz_sa} \
         --reference_gz_pac ${reference_gz_pac} \
@@ -317,6 +320,8 @@ tools:
         items:
           type: string
           is_file: true
+      output_file_basename:
+        type: string
       reference_gz_amb:
         type: string
         is_file: true

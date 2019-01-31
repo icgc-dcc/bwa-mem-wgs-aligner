@@ -27,6 +27,16 @@ output = {
     'unaligned_rg_replace_dir': None
 }
 
+RG_map = { 'ID': 'readGroupId',
+           'LB': 'libraryName',
+           'PL': 'sequencingPlatform',
+           'PU': 'platformUnit',
+           'SM': 'aliquotId',
+           'PM': 'platformModel',
+           'CN': 'sequencingCenter',
+           'PI': 'insertSize'}
+
+
 # the inputs are BAM
 if input_format == 'BAM':
     files = metadata.get('files')
@@ -41,22 +51,25 @@ if input_format == 'BAM':
         # get all the rg for the _file
         rg_yaml = set()
         rg_replace = {}
-        for rg in _file.get('read_groups'):
-            rg_yaml.add(rg.get('rg_id_in_file'))
-            rg_replace[rg.get('rg_id_in_file')] = {'ID': rg.get('read_group_id'),
-                                                   'LB': rg.get('library_name'),
-                                                   'PL': rg.get('sequencing_platform'),
-                                                   'PU': rg.get('platform_unit'),
-                                                   'SM': metadata.get('aliquot_id'),
-                                                   'PM': rg.get('platform_model'),
-                                                   'CN': rg.get('sequencing_center'),
-                                                   'PI': rg.get('insert_size'),
-                                                   'DT': rg.get('sequencing_date')}
+        for rg in _file.get('readGroups'):
+            rg_yaml.add(rg.get('readGroupIdInFile'))
+            rg_replace[rg.get('readGroupIdInFile')] = {}
+            for key, value in RG_map.items():
+                to_update = {}
+                if key == 'SM' and metadata.get(value):
+                    to_update = {key: metadata.get(value)}
+                if key in ['ID', 'LB', 'PL', 'PU', 'PM', 'CN'] and rg.get(value) or key == 'PI' and isinstance(rg.get(value), int):
+                    to_update = {key: rg.get(value)}
+                if to_update:
+                    rg_replace[rg.get('readGroupIdInFile')].update(to_update)
+
+
 
         for bam_dict in download_files:
             if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:
                 file_with_path = bam_dict.get('local_path')
                 break
+            sys.exit('\n Error: can not find the downloaded file with matched information in the YAML!')
 
         # check whether the download files exist
         if not os.path.isfile(file_with_path): sys.exit('\n The downloaded file: %s do not exist!' % file_with_path)
@@ -82,31 +95,11 @@ if input_format == 'BAM':
         if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
 
 
-        # do the replacement for all read_groups
+        # do the replacement for all readGroups
         for rg_old, rg_new in rg_replace.items():
-            if 'ID' not in rg_new or str(rg_new.get('ID')) == '':
-                sys.exit('Must specify read_group_id for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
-            rg_args = ['RGID=%s' % rg_new.get('ID')]
-            if 'LB' not in rg_new or str(rg_new.get('LB')) == '':
-                sys.exit('Must specify library_name for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
-            rg_args.append('RGLB=%s' % rg_new.get('LB'))
-            if 'PL' not in rg_new or str(rg_new.get('PL')) == '':
-                sys.exit('Must specify sequencing_platform for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
-            rg_args.append('RGPL=%s' % rg_new.get('PL'))
-            if 'PU' not in rg_new or str(rg_new.get('PU')) == '':
-                sys.exit('Must specify platform_unit for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
-            rg_args.append('RGPU=%s' % rg_new.get('PU'))
-            if 'SM' not in rg_new or str(rg_new.get('SM')) == '':
-                sys.exit('Must specify aliquot_id for file: %s' % os.path.join(output_dir, rg_old+'.bam'))
-            rg_args.append('RGSM=%s' % rg_new.get('SM'))
-            if 'PM' in rg_new and str(rg_new.get('PM')) != '':
-                rg_args.append('RGPM=%s' % rg_new.get('PM'))
-            if 'CN' in rg_new and str(rg_new.get('CN')) != '':
-                rg_args.append('RGCN=%s' % rg_new.get('CN'))
-            if 'PI' in rg_new and isinstance(rg_new.get('PI'), int):
-                rg_args.append('RGPI=%s' % rg_new.get('PI'))
-            if 'DT' in rg_new and re.match('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$', str(rg_new.get('DT'))):
-                rg_args.append('RGDT=%s' % str(rg_new.get('DT')))
+            rg_args = []
+            for key, value in rg_new.items():
+                rg_args.append('RG%s=%s' % (key, value))
 
             try:
                 subprocess.run(['java', '-jar', picard,
