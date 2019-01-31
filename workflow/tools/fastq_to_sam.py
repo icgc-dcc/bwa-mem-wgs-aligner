@@ -27,6 +27,15 @@ output = {
     'bams': []
 }
 
+case_map = {
+    'dccProjectCode': 'dcc_project_code',
+    'submitterDonorId': 'submitter_donor_id',
+    'submitterSpecimenId': 'submitter_specimen_id',
+    'submitterSampleId': 'submitter_sample_id',
+    'dccSpecimenType': 'dcc_specimen_type',
+    'libraryStrategy': 'library_strategy',
+    'useCntl': 'use_cntl'
+}
 
 if input_format == 'FASTQ':
     readGroups = metadata.get('readGroups')
@@ -64,7 +73,7 @@ if input_format == 'FASTQ':
             rg_args.append('PLATFORM_MODEL=%s' % rg.get('platformModel'))
 
         for ct in ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'dccSpecimenType', 'libraryStrategy', 'useCntl']:
-            rg_args.append('COMMENT=%s:%s' % (ct, metadata.get(ct)))
+            rg_args.append('COMMENT=%s:%s' % (case_map.get(ct), metadata.get(ct)))
 
 
         # convert pair end fastq to unaligned and lane level bam sorted by query name

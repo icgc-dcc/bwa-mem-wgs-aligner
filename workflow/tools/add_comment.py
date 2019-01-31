@@ -24,6 +24,16 @@ output = {
 with open(task_dict['input'].get('metadata_json'), 'r') as f:
     metadata = json.load(f)
 
+case_map = {
+    'dccProjectCode': 'dcc_project_code',
+    'submitterDonorId': 'submitter_donor_id',
+    'submitterSpecimenId': 'submitter_specimen_id',
+    'submitterSampleId': 'submitter_sample_id',
+    'dccSpecimenType': 'dcc_specimen_type',
+    'libraryStrategy': 'library_strategy',
+    'useCntl': 'use_cntl'
+}
+
 # the inputs are BAM
 if input_format == 'BAM':
     picard = task_dict['input'].get('picard_jar')
@@ -31,7 +41,7 @@ if input_format == 'BAM':
 
     rg_args = []
     for ct in ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'dccSpecimenType', 'libraryStrategy', 'useCntl']:
-        rg_args.append('C=%s:%s' % (ct, metadata.get(ct)))
+        rg_args.append('C=%s:%s' % (case_map.get(ct), metadata.get(ct)))
 
     files = metadata.get('files')
     output_dir = os.path.join(cwd, 'lane_unaligned')
