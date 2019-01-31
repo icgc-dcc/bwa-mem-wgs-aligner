@@ -303,7 +303,7 @@ tools:
       dockstore_cwl_runner.py --cwl_file ${cwl_file} \
         --reads ${sep=' ' lane_bams} \
         --output_dir datastore \
-        --output_file_basename {output_file_basename} \
+        --output_file_basename ${output_file_basename} \
         --reference_gz_amb ${reference_gz_amb} \
         --reference_gz_sa ${reference_gz_sa} \
         --reference_gz_pac ${reference_gz_pac} \
