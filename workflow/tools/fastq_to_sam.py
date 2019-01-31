@@ -62,8 +62,6 @@ if input_format == 'FASTQ':
             rg_args.append('PREDICTED_INSERT_SIZE=%s' % rg.get('insertSize'))
         if rg.get('platformModel') and str(rg.get('platformModel')) != '':
             rg_args.append('PLATFORM_MODEL=%s' % rg.get('platformModel'))
-        if rg.get('sequencingDate') and re.match('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$', str(rg.get('sequencingDate'))):
-            rg_args.append('RUN_DATE=%s' % rg.get('sequencingDate'))
 
         for ct in ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'dccSpecimenType', 'libraryStrategy', 'useCntl']:
             rg_args.append('COMMENT=%s:%s' % (ct, metadata.get(ct)))
