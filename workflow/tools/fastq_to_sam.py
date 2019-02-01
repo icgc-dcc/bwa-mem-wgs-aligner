@@ -88,6 +88,12 @@ if input_format == 'FASTQ':
         except Exception as e:
             sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[1]))
 
+        for f in file_with_path:
+            try:
+                os.remove(f)
+            except Exception as e:
+                sys.exit('\n%s: Delete file failed: %s' % (e, f))
+
         output['bams'].append(os.path.join(output_dir, readGroupId.replace(':', '_') + '.lane.bam'))
 
 # the inputs are BAM

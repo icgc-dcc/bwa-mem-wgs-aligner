@@ -113,6 +113,12 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old + '.bam')))
 
+        # delete the downloaded files
+        try:
+            os.remove(file_with_path)
+        except Exception as e:
+            sys.exit('\n%s: Delete file failed: %s' % (e, file_with_path))
+
 elif input_format == 'FASTQ':
     # sleep 60 seconds and pass through the parameters
     time.sleep(60)
