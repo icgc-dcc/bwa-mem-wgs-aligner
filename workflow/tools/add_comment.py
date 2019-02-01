@@ -60,6 +60,9 @@ if input_format == 'BAM':
 
             output['bams'].append(os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam'))
 
+    # delete the files at the very last moment
+    if os.path.isdir(unaligned_rg_replace_dir): shutil.rmtree(unaligned_rg_replace_dir)
+
 elif input_format == 'FASTQ':
     time.sleep(60)
     output['bams'] = task_dict['input'].get('bams')
@@ -71,6 +74,3 @@ output['aligned_bam_basename'] = '.'.join([metadata.get('aliquotId'), str(len(ou
 
 with open("output.json", "w") as o:
     o.write(json.dumps(output))
-
-#delete the files at the very last moment
-if os.path.isdir(unaligned_rg_replace_dir): shutil.rmtree(unaligned_rg_replace_dir)

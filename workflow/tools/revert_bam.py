@@ -54,6 +54,14 @@ if input_format == 'BAM':
         except Exception as e:
             sys.exit('\n%s: RevertSam failed: %s' %(e, file_with_path))
 
+    # delete the files at the very last step
+    for f in download_files:
+        if not os.path.isfile(f): continue
+        try:
+            os.remove(f)
+        except Exception as e:
+            sys.exit('\n%s: Delete file failed: %s' % (e, f))
+
 
 elif input_format == 'FASTQ':
     # sleep 60 seconds and pass through the parameters

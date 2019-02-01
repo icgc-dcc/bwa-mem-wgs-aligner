@@ -87,7 +87,6 @@ workflow:
       tool: replace_readgroup
       input:
         metadata_json: metadata_json@validate_metadata
-        download_files: download_files@download
         picard_jar: picard_jar
         input_format: input_format@validate_metadata
         unaligned_by_rg_dir: unaligned_by_rg_dir@revert_bam
@@ -318,7 +317,7 @@ tools:
 
   pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
     command: |
-      dockstore_cwl_runner.py --cwl_file ${cwl_file} \
+      pcawg_aligner.py --cwl_file ${cwl_file} \
         --reads ${sep=' ' lane_bams} \
         --output_dir datastore \
         --output_file_basename ${output_file_basename} \
