@@ -78,6 +78,7 @@ with open("output.json", "w") as o:
 
 #delete the lane level bams at the last moment
 for read in args.reads:
+  if not os.path.isfile(read): continue
   try:
     os.remove(read)
   except Exception as e:

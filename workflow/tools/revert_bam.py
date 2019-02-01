@@ -55,12 +55,12 @@ if input_format == 'BAM':
             sys.exit('\n%s: RevertSam failed: %s' %(e, file_with_path))
 
     # delete the files at the very last step
-    for f in download_files:
-        if not os.path.isfile(f): continue
+    for file_dict in download_files:
+        if not os.path.isfile(file_dict.get('local_path')): continue
         try:
-            os.remove(f)
+            os.remove(file_dict.get('local_path'))
         except Exception as e:
-            sys.exit('\n%s: Delete file failed: %s' % (e, f))
+            sys.exit('\n%s: Delete file failed: %s' % (e, file_dict.get('local_path')))
 
 
 elif input_format == 'FASTQ':
