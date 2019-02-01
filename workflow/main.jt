@@ -228,10 +228,6 @@ tools:
       picard_jar:
         type: string
         is_file: true
-      download_files:
-        type: array
-        items:
-          type: object
       unaligned_by_rg_dir:
         type: string
       input_format:
