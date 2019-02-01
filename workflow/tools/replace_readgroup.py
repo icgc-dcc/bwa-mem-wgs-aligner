@@ -45,7 +45,7 @@ if input_format == 'BAM':
 
     for _file in files:
         file_path = _file.get('path')
-        file_name = _file.get('name')
+        file_name = _file.get('fileName')
 
         # get all the rg for the _file
         rg_yaml = set()

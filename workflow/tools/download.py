@@ -38,7 +38,7 @@ if input_format == 'BAM':
     files = metadata.get('files')
     for _file in files:
         file_path = _file.get('path')
-        file_name = _file.get('name')
+        file_name = _file.get('fileName')
 
         if file_path.startswith('song://'):
             storage_site, analysis_id, object_id = file_path.replace('song://', '').split('/')
@@ -81,7 +81,7 @@ elif input_format == 'FASTQ':
         files = rg.get('files')
         for _file in files:
             file_path = _file.get('path')
-            file_name = _file.get('name')
+            file_name = _file.get('fileName')
 
             if file_path.startswith('song://'):
                 storage_site, analysis_id, object_id = file_path.replace('song://', '').split('/')

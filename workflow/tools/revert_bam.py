@@ -35,7 +35,7 @@ if input_format == 'BAM':
 
     for _file in files:
         file_path = _file.get('path')
-        file_name = _file.get('name')
+        file_name = _file.get('fileName')
 
         for bam_dict in download_files:
             if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:

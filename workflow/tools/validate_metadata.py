@@ -25,15 +25,15 @@ def reshape_metadata(input_metadata):
                     output_rg[k] = v
                     continue
                 for fn in rg['files']:
-                    if not fn['name'] in output_files:
-                        output_files[fn['name']] = {}
-                        output_files[fn['name']]['readGroups'] = []
+                    if not fn['fileName'] in output_files:
+                        output_files[fn['fileName']] = {}
+                        output_files[fn['fileName']]['readGroups'] = []
                     for fk, fv in fn.items():
                         if not fk == 'readGroupIdInFile':
-                            output_files[fn['name']][fk] = fv
+                            output_files[fn['fileName']][fk] = fv
                             continue
                         output_rg[fk] = fv
-            output_files[fn['name']]['readGroups'].append(output_rg)
+            output_files[fn['fileName']]['readGroups'].append(output_rg)
     output_metadata['files'] = []
     for key, value in output_files.items():
         output_metadata['files'].append(value)
@@ -49,15 +49,15 @@ with open(task_dict['input'].get('metadata_yaml'), 'r') as f:
     input_metadata=yaml.load(f)
 
 # metadata validate
-fields_to_check = ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'aliquotId', 'dccSpecimenType', 'libraryStrategy', 'useCntl', 'readGroups']
+fields_to_check = ['study', 'donorSubmitterId', 'specimenSubmitterId', 'sampleSubmitterId', 'aliquotId', 'specimenType', 'libraryStrategy', 'useCntl', 'readGroups']
 for field_name in fields_to_check:
     if field_name not in input_metadata.keys() or not input_metadata.get(field_name):
         sys.exit('The metadata YAML must contain and specify field: %s' % field_name)
     if field_name == 'useCntl':
-        if 'normal' not in input_metadata.get('dccSpecimenType').lower() and \
+        if 'normal' not in input_metadata.get('specimenType').lower() and \
                 not re.match(r'^([a-f\d]{8}(-[a-f\d]{4}){3}-[a-f\d]{12})$', str(input_metadata['useCntl'])):
             sys.exit('Must specify useCntl for Tumor in metadata YAML file as UUID')
-        elif 'normal' in input_metadata.get('dccSpecimenType').lower() and not input_metadata['useCntl'] == 'N/A':
+        elif 'normal' in input_metadata.get('specimenType').lower() and not input_metadata['useCntl'] == 'N/A':
             sys.exit('Must specify useCntl for Normal in metadata YAML file as N/A')
     if field_name == 'aliquotId' and not re.match(r'^([a-f\d]{8}(-[a-f\d]{4}){3}-[a-f\d]{12})$', str(input_metadata['aliquotId'])):
         sys.exit('Must specify aliquotId in UUID format!')
@@ -65,7 +65,7 @@ for field_name in fields_to_check:
 # readGroups fields validate
 rg_fields_to_check = ['readGroupId', 'sequencingPlatform', 'platformUnit', 'libraryName', 'files']
 # files fields validate
-file_fields_to_check = ['name', 'size', 'readGroupIdInFile', 'md5sum', 'path', 'format']
+file_fields_to_check = ['fileName', 'fileSize', 'readGroupIdInFile', 'fileMd5sum', 'path', 'fileType']
 
 for readGroup in input_metadata['readGroups']:
     for rg_field in rg_fields_to_check:
@@ -82,7 +82,7 @@ for readGroup in input_metadata['readGroups']:
 input_format = set()
 for rg in input_metadata['readGroups']:
     for rg_file in rg['files']:
-        input_format.add(rg_file.get('format'))
+        input_format.add(rg_file.get('fileType'))
 
 if not len(input_format) == 1: sys.exit('\nError: The input files should have the same format.')
 
