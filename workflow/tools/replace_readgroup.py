@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import os
-import re
 import subprocess
 import sys
 import json
 import time
+import shutil
 
 """
 Major steps:
@@ -17,7 +17,6 @@ cwd = os.getcwd()
 
 picard = task_dict['input'].get('picard_jar')
 input_format = task_dict['input'].get('input_format')
-download_files = task_dict['input'].get('download_files')
 unaligned_by_rg_dir = task_dict['input'].get('unaligned_by_rg_dir')
 
 with open(task_dict['input'].get('metadata_json'), 'r') as f:
@@ -46,7 +45,7 @@ if input_format == 'BAM':
 
     for _file in files:
         file_path = _file.get('path')
-        file_name = _file.get('name')
+        file_name = _file.get('fileName')
 
         # get all the rg for the _file
         rg_yaml = set()
@@ -63,38 +62,6 @@ if input_format == 'BAM':
                 if to_update:
                     rg_replace[rg.get('readGroupIdInFile')].update(to_update)
 
-
-
-        for bam_dict in download_files:
-            if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:
-                file_with_path = bam_dict.get('local_path')
-                break
-            sys.exit('\n Error: can not find the downloaded file with matched information in the YAML!')
-
-        # check whether the download files exist
-        if not os.path.isfile(file_with_path): sys.exit('\n The downloaded file: %s do not exist!' % file_with_path)
-
-        # retrieve the @RG from BAM header
-        try:
-            header = subprocess.check_output(['samtools', 'view', '-H', file_with_path])
-
-        except Exception as e:
-            sys.exit('\n%s: Retrieve BAM header failed: %s' % (e, file_with_path))
-
-        # get @RG
-        header_array = header.decode('utf-8').rstrip().split('\n')
-        rg_bam = set()
-        for line in header_array:
-            if not line.startswith("@RG"): continue
-            rg_array = line.rstrip().split('\t')[1:]
-            for element in rg_array:
-                if not element.startswith('ID'): continue
-                rg_bam.add(':'.join(element.rstrip().split(':')[1:]))
-
-        # compare the RG ids
-        if not rg_yaml == rg_bam: sys.exit('\nThe read groups in metadata do not match with those in BAM!')  # die fast
-
-
         # do the replacement for all readGroups
         for rg_old, rg_new in rg_replace.items():
             rg_args = []
@@ -108,10 +75,8 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old+'.bam')))
 
-            try:
-                os.remove(os.path.join(unaligned_by_rg_dir, rg_old+'.bam'))
-            except Exception as e:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old + '.bam')))
+    # delete files at the very last moment
+    if os.path.isdir(unaligned_by_rg_dir): shutil.rmtree(unaligned_by_rg_dir)
 
 elif input_format == 'FASTQ':
     # sleep 60 seconds and pass through the parameters

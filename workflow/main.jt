@@ -56,43 +56,48 @@ workflow:
       default: "[genome.fa.gz]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz"
 
   tasks:
+    validate_metadata:
+      tool: validate_metadata
+      input:
+        metadata_yaml: metadata_yaml
+
     download:
       tool: download
       input:
-        metadata_yaml: metadata_yaml
+        metadata_json: metadata_json@validate_metadata
+        input_format: input_format@validate_metadata
 
     fastq_to_sam:
       tool: fastq_to_sam
       input:
-        metadata_json: metadata_json@download
+        metadata_json: metadata_json@validate_metadata
         download_files: download_files@download
         picard_jar: picard_jar
-        input_format: input_format@download
+        input_format: input_format@validate_metadata
 
     revert_bam:
       tool: revert_bam
       input:
-        metadata_json: metadata_json@download
+        metadata_json: metadata_json@validate_metadata
         download_files: download_files@download
         picard_jar: picard_jar
-        input_format: input_format@download
+        input_format: input_format@validate_metadata
 
     replace_readgroup:
       tool: replace_readgroup
       input:
-        metadata_json: metadata_json@download
-        download_files: download_files@download
+        metadata_json: metadata_json@validate_metadata
         picard_jar: picard_jar
-        input_format: input_format@download
+        input_format: input_format@validate_metadata
         unaligned_by_rg_dir: unaligned_by_rg_dir@revert_bam
 
     add_comment:
       tool: add_comment
       input:
-        metadata_json: metadata_json@download
+        metadata_json: metadata_json@validate_metadata
         bams: bams@fastq_to_sam
         picard_jar: picard_jar
-        input_format: input_format@download
+        input_format: input_format@validate_metadata
         unaligned_rg_replace_dir: unaligned_rg_replace_dir@replace_readgroup
 
     lane_bam_qc:
@@ -135,8 +140,8 @@ workflow:
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
 tools:
-  download:
-    command: download.py
+  validate_metadata:
+    command: validate_metadata.py
 
     input:
       metadata_yaml:
@@ -149,6 +154,18 @@ tools:
       metadata_json:
         type: string
         is_file: true
+
+  download:
+    command: download.py
+
+    input:
+      metadata_json:
+        type: string
+        is_file: true
+      input_format:
+        type: string
+
+    output:
       download_files:
         type: array
         items:
@@ -211,10 +228,6 @@ tools:
       picard_jar:
         type: string
         is_file: true
-      download_files:
-        type: array
-        items:
-          type: object
       unaligned_by_rg_dir:
         type: string
       input_format:
@@ -300,7 +313,7 @@ tools:
 
   pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
     command: |
-      dockstore_cwl_runner.py --cwl_file ${cwl_file} \
+      pcawg_aligner.py --cwl_file ${cwl_file} \
         --reads ${sep=' ' lane_bams} \
         --output_dir datastore \
         --output_file_basename ${output_file_basename} \

@@ -35,7 +35,7 @@ if input_format == 'BAM':
 
     for _file in files:
         file_path = _file.get('path')
-        file_name = _file.get('name')
+        file_name = _file.get('fileName')
 
         for bam_dict in download_files:
             if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:
@@ -53,6 +53,14 @@ if input_format == 'BAM':
                             'OUTPUT_BY_READGROUP=true', 'O=%s' % output_dir], check=True)
         except Exception as e:
             sys.exit('\n%s: RevertSam failed: %s' %(e, file_with_path))
+
+    # delete the files at the very last step
+    for f in download_files:
+        if not os.path.isfile(f): continue
+        try:
+            os.remove(f)
+        except Exception as e:
+            sys.exit('\n%s: Delete file failed: %s' % (e, f))
 
 
 elif input_format == 'FASTQ':

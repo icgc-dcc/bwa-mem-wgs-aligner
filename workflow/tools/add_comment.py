@@ -6,6 +6,7 @@ import sys
 import json
 import time
 import datetime
+import shutil
 
 """
 Major steps:
@@ -25,11 +26,11 @@ with open(task_dict['input'].get('metadata_json'), 'r') as f:
     metadata = json.load(f)
 
 case_map = {
-    'dccProjectCode': 'dcc_project_code',
-    'submitterDonorId': 'submitter_donor_id',
-    'submitterSpecimenId': 'submitter_specimen_id',
-    'submitterSampleId': 'submitter_sample_id',
-    'dccSpecimenType': 'dcc_specimen_type',
+    'study': 'dcc_project_code',
+    'donorSubmitterId': 'submitter_donor_id',
+    'specimenSubmitterId': 'submitter_specimen_id',
+    'sampleSubmitterId': 'submitter_sample_id',
+    'specimenType': 'dcc_specimen_type',
     'libraryStrategy': 'library_strategy',
     'useCntl': 'use_cntl'
 }
@@ -40,7 +41,7 @@ if input_format == 'BAM':
     unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
 
     rg_args = []
-    for ct in ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'dccSpecimenType', 'libraryStrategy', 'useCntl']:
+    for ct in ['study', 'donorSubmitterId', 'specimenSubmitterId', 'sampleSubmitterId', 'specimenType', 'libraryStrategy', 'useCntl']:
         rg_args.append('C=%s:%s' % (case_map.get(ct), metadata.get(ct)))
 
     files = metadata.get('files')
@@ -57,13 +58,10 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
 
-            try:
-                os.remove(os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'))
-            except Exception as e:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
-
-
             output['bams'].append(os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam'))
+
+    # delete the files at the very last moment
+    if os.path.isdir(unaligned_rg_replace_dir): shutil.rmtree(unaligned_rg_replace_dir)
 
 elif input_format == 'FASTQ':
     time.sleep(60)

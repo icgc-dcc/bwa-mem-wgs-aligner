@@ -28,11 +28,11 @@ output = {
 }
 
 case_map = {
-    'dccProjectCode': 'dcc_project_code',
-    'submitterDonorId': 'submitter_donor_id',
-    'submitterSpecimenId': 'submitter_specimen_id',
-    'submitterSampleId': 'submitter_sample_id',
-    'dccSpecimenType': 'dcc_specimen_type',
+    'study': 'dcc_project_code',
+    'donorSubmitterId': 'submitter_donor_id',
+    'specimenSubmitterId': 'submitter_specimen_id',
+    'sampleSubmitterId': 'submitter_sample_id',
+    'specimenType': 'dcc_specimen_type',
     'libraryStrategy': 'library_strategy',
     'useCntl': 'use_cntl'
 }
@@ -45,7 +45,7 @@ if input_format == 'FASTQ':
         file_with_path = []
         for _file in files:
             file_path = _file.get('path')
-            file_name = _file.get('name')
+            file_name = _file.get('fileName')
 
             for fastq in download_files:
                 if fastq.get('path') == file_path and fastq.get('name') == file_name:
@@ -72,7 +72,7 @@ if input_format == 'FASTQ':
         if rg.get('platformModel') and str(rg.get('platformModel')) != '':
             rg_args.append('PLATFORM_MODEL=%s' % rg.get('platformModel'))
 
-        for ct in ['dccProjectCode', 'submitterDonorId', 'submitterSpecimenId', 'submitterSampleId', 'dccSpecimenType', 'libraryStrategy', 'useCntl']:
+        for ct in ['study', 'donorSubmitterId', 'specimenSubmitterId', 'sampleSubmitterId', 'specimenType', 'libraryStrategy', 'useCntl']:
             rg_args.append('COMMENT=%s:%s' % (case_map.get(ct), metadata.get(ct)))
 
 
@@ -90,6 +90,13 @@ if input_format == 'FASTQ':
 
         output['bams'].append(os.path.join(output_dir, readGroupId.replace(':', '_') + '.lane.bam'))
 
+    # delete the files at the very last step
+    for f in download_files:
+        try:
+            os.remove(f)
+        except Exception as e:
+            sys.exit('\n%s: Delete file failed: %s' % (e, f))
+
 # the inputs are BAM
 elif input_format == 'BAM':
     # sleep 60 seconds and pass through
@@ -99,6 +106,6 @@ elif input_format == 'BAM':
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
 
-
 with open("output.json", "w") as o:
     o.write(json.dumps(output))
+
