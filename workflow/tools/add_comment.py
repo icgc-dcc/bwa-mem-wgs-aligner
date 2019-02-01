@@ -6,6 +6,7 @@ import sys
 import json
 import time
 import datetime
+import shutil
 
 """
 Major steps:
@@ -57,12 +58,6 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
 
-            try:
-                os.remove(os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'))
-            except Exception as e:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
-
-
             output['bams'].append(os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam'))
 
 elif input_format == 'FASTQ':
@@ -76,3 +71,6 @@ output['aligned_bam_basename'] = '.'.join([metadata.get('aliquotId'), str(len(ou
 
 with open("output.json", "w") as o:
     o.write(json.dumps(output))
+
+#delete the files at the very last moment
+if os.path.isdir(unaligned_rg_replace_dir): shutil.rmtree(unaligned_rg_replace_dir)

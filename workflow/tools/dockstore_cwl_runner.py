@@ -74,3 +74,10 @@ with open("output.json", "w") as o:
     'merged_output_unmapped_bai': output_path+'.unmapped.bam.bai',
     'merged_output_unmapped_bam': output_path+'.unmapped.bam'
   },o)
+
+#delete the lane level bams at the last moment
+for read in args.reads:
+  try:
+    os.remove(read)
+  except Exception as e:
+    sys.exit('\n%s: Delete file failed: %s' % (e, read))

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import os
-import re
 import subprocess
 import sys
 import json
 import time
+import shutil
 
 """
 Major steps:
@@ -63,8 +63,6 @@ if input_format == 'BAM':
                 if to_update:
                     rg_replace[rg.get('readGroupIdInFile')].update(to_update)
 
-
-
         for bam_dict in download_files:
             if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:
                 file_with_path = bam_dict.get('local_path')
@@ -108,16 +106,6 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old+'.bam')))
 
-            try:
-                os.remove(os.path.join(unaligned_by_rg_dir, rg_old+'.bam'))
-            except Exception as e:
-                sys.exit('\n%s: Delete file failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old + '.bam')))
-
-        # delete the downloaded files
-        try:
-            os.remove(file_with_path)
-        except Exception as e:
-            sys.exit('\n%s: Delete file failed: %s' % (e, file_with_path))
 
 elif input_format == 'FASTQ':
     # sleep 60 seconds and pass through the parameters
@@ -130,3 +118,13 @@ else:
 
 with open("output.json", "w") as o:
     o.write(json.dumps(output))
+
+# delete files at the very last moment
+if os.path.isdir(unaligned_by_rg_dir): shutil.rmtree(unaligned_by_rg_dir)
+
+for f in download_files:
+    if not os.path.isfile(f): continue
+    try:
+        os.remove(f)
+    except Exception as e:
+        sys.exit('\n%s: Delete file failed: %s' % (e, f))
