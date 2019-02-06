@@ -33,7 +33,8 @@ RG_map = { 'ID': 'readGroupId',
            'SM': 'aliquotId',
            'PM': 'platformModel',
            'CN': 'sequencingCenter',
-           'PI': 'insertSize'}
+           'PI': 'insertSize',
+           'DT': 'sequencingDate'}
 
 
 # the inputs are BAM
@@ -57,8 +58,10 @@ if input_format == 'BAM':
                 to_update = {}
                 if key == 'SM' and metadata.get(value):
                     to_update = {key: metadata.get(value)}
-                if key in ['ID', 'LB', 'PL', 'PU', 'PM', 'CN'] and rg.get(value) or key == 'PI' and isinstance(rg.get(value), int):
+                if key in ['ID', 'LB', 'PL', 'PU', 'PM', 'CN', 'DT'] and rg.get(value) or key == 'PI' and isinstance(rg.get(value), int):
                     to_update = {key: rg.get(value)}
+                # if key == 'DT' and re.match('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$', str(rg.get(value))):
+                #     to_update = {key: rg.get(value)}
                 if to_update:
                     rg_replace[rg.get('readGroupIdInFile')].update(to_update)
 
