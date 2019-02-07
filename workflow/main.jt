@@ -26,10 +26,6 @@ workflow:
     storage_aws_url:
       type: string
       default: ""
-    study:
-      type: string
-    aliquot_id:
-      type: string
     metadata_yaml:
       type: string
       is_file: true
@@ -186,6 +182,7 @@ workflow:
     upload_song_payload_collab:
       tool: upload_song_payload
       input:
+        is_allowed: collab_upload_allowed@validate_metadata
         payload: payload@generate_song_payload
         song_metadata_url: song_collab_url
         study: study@validate_metadata
@@ -193,6 +190,7 @@ workflow:
     upload_song_payload_aws:
       tool: upload_song_payload
       input:
+        is_allowed: aws_upload_allowed@validate_metadata
         payload: payload@generate_song_payload
         song_metadata_url: song_aws_url
         study: study@validate_metadata
@@ -200,6 +198,7 @@ workflow:
     save_song_payload_collab:
       tool: save_song_payload
       input:
+        is_allowed: collab_upload_allowed@validate_metadata
         song_metadata_url: song_collab_url
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_collab
@@ -207,6 +206,7 @@ workflow:
     save_song_payload_aws:
       tool: save_song_payload
       input:
+        is_allowed: aws_upload_allowed@validate_metadata
         song_metadata_url: song_aws_url
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_aws
@@ -214,6 +214,7 @@ workflow:
     create_manifest_file_collab:
       tool: create_manifest_file
       input:
+        is_allowed: collab_upload_allowed@validate_metadata
         input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_collab_url
         study: study
@@ -223,6 +224,7 @@ workflow:
     create_manifest_file_aws:
       tool: create_manifest_file
       input:
+        is_allowed: aws_upload_allowed@validate_metadata
         input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_aws_url
         study: study
@@ -232,6 +234,7 @@ workflow:
     score_upload_collab:
       tool: score_upload
       input:
+        is_allowed: collab_upload_allowed@validate_metadata
         manifest_file: manifest_file@create_manifest_file_collab
         input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_collab_url
@@ -240,6 +243,7 @@ workflow:
     score_upload_aws:
       tool: score_upload
       input:
+        is_allowed: aws_upload_allowed@validate_metadata
         manifest_file: manifest_file@create_manifest_file_aws
         input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_aws_url
@@ -248,6 +252,7 @@ workflow:
     publish_song_payload_collab:
       tool: publish_song_payload
       input:
+        is_allowed: collab_upload_allowed@validate_metadata
         song_metadata_url: song_collab_url
         study: study
         analysis_id: analysis_id@save_song_payload_collab
@@ -255,6 +260,7 @@ workflow:
     publish_song_payload_aws:
       tool: publish_song_payload
       input:
+        is_allowed: aws_upload_allowed@validate_metadata
         song_metadata_url: song_aws_url
         study: study
         analysis_id: analysis_id@save_song_payload_aws
@@ -281,6 +287,12 @@ tools:
       number_of_lanes:
         type: integer
       study:
+        type: string
+      collab_upload_allowed:
+        type: string
+      aws_upload_allowed:
+        type: string
+      cgc_upload_allowed:
         type: string
 
   download:
@@ -650,15 +662,24 @@ tools:
 
   upload_song_payload:
     command: |
-      docker pull ${dckr_pcawg2_song} \
-      && docker run \
-          --net=host \
-          -e ACCESS_TOKEN \ 
-          -v ${payload}:/data/payload.json \
-          ${dckr_pcawg2_song} \
-          uperation sing upload \
-          --song-url ${song_metadata_url} --study ${study} --payload /data/payload.json > output.json
+      if [ "${is_allowed}" = true ]; then \
+        docker pull ${dckr_pcawg2_song} \
+        && docker run \
+            --net=host \
+            -e ACCESS_TOKEN \
+            -v ${payload}:/data/payload.json \
+            ${dckr_pcawg2_song} \
+            uperation sing upload \
+              --song-url ${song_metadata_url} \
+              --study ${study} \
+              --payload /data/payload.json > output.json; \
+      else \
+        echo "{ \"_skipped\": true }" > output.json; \
+      fi
+
     input:
+      is_allowed:
+        type: tring
       payload:
         type: string
         is_file: true
@@ -676,14 +697,23 @@ tools:
 
   save_song_payload:
     command: |
-      docker pull ${dckr_pcawg2_song} \
-      && docker run \
-          --net=host \
-          -e ACCESS_TOKEN
-          ${dckr_pcawg2_song} \
-          uperation sing save \
-          --song-url ${song_metadata_url} --study ${study} --upload-id ${upload_id} > output.json
+      if [ "${is_allowed}" = true ]; then \
+        docker pull ${dckr_pcawg2_song} \
+        && docker run \
+            --net=host \
+            -e ACCESS_TOKEN \
+            ${dckr_pcawg2_song} \
+            uperation sing save \
+              --song-url ${song_metadata_url} \
+              --study ${study} \
+              --upload-id ${upload_id} > output.json; \
+      else \
+        echo "{ \"_skipped\": true }" > output.json; \
+      fi
+
     input:
+      is_allowed:
+        type: tring
       dckr_pcawg2_song:
         type: string
       song_metadata_url:
@@ -700,16 +730,27 @@ tools:
 
   create_manifest_file:
     command: |
-      docker pull ${dckr_pcawg2_song} \
-      && docker run \
-          --net=host \
-          -v $(pwd):/output \
-          -v ${input_dir}:/data \
-          ${dckr_pcawg2_song} \
-          uperation sing manifest \
-          --song-url ${song_metadata_url} --study ${study} --analysis ${analysis_id} --files-dir ./ --manifest ${manifest_file} \
-      && echo "{\"manifest_file\": \"${manifest_file}\" }" > output.json
+      if [ "${is_allowed}" = true ]; then \
+        docker pull ${dckr_pcawg2_song} \
+        && docker run \
+            --net=host \
+            -v $(pwd):/output \
+            -v ${input_dir}:/data \
+            ${dckr_pcawg2_song} \
+            uperation sing manifest \
+              --song-url ${song_metadata_url} \
+              --study ${study} \
+              --analysis ${analysis_id} \
+              --files-dir ./ \
+              --manifest ${manifest_file} \
+        && echo "{\"manifest_file\": \"${manifest_file}\" }" > output.json; \
+      else \
+        echo "{ \"_skipped\": true }" > output.json; \
+      fi
+
     input:
+      is_allowed:
+        type: tring
       dckr_pcawg2_song:  # Docker image
         type: string
       input_dir:
@@ -730,17 +771,25 @@ tools:
 
   score_upload:
     command: |
-      docker pull ${dckr_score} \
-      && docker run \
-          --net=host \
-          -v ${manifest_file}:/manifest.txt \
-          -v ${input_dir}:/data \
-          -e ACCESS_TOKEN \
-          -e STORAGE_URL=${storage_url} \
-          -e METADATA_URL=${song_metadata_url} \
-          ${dckr_score} \
-          bin/score-client upload --manifest /manifest.txt --force
+      if [ "${is_allowed}" = true ]; then \
+        docker pull ${dckr_score} \
+        && docker run \
+            --net=host \
+            -v ${manifest_file}:/manifest.txt \
+            -v ${input_dir}:/data \
+            -e ACCESS_TOKEN \
+            -e STORAGE_URL=${storage_url} \
+            -e METADATA_URL=${song_metadata_url} \
+            ${dckr_score} \
+            bin/score-client upload \
+              --manifest /manifest.txt --force; \
+      else \
+        echo "{ \"_skipped\": true }" > output.json; \
+      fi
+
     input:
+      is_allowed:
+        type: tring
       dckr_score:
         type: string
       manifest_file:
@@ -755,14 +804,23 @@ tools:
 
   publish_song_payload:
     command: |
-      docker pull ${dckr_pcawg2_song} \
-      && docker run \
-          --net=host \
-          -e ACCESS_TOKEN \
-          ${dckr_pcawg2_song} \
-          uperation publish \
-          --song-url ${song_metadata_url} --study ${study} --analysis-id ${analysis_id}
+      if [ "${is_allowed}" = true ]; then \
+        docker pull ${dckr_pcawg2_song} \
+        && docker run \
+            --net=host \
+            -e ACCESS_TOKEN \
+            ${dckr_pcawg2_song} \
+            uperation publish \
+              --song-url ${song_metadata_url} \
+              --study ${study} \
+              --analysis-id ${analysis_id}; \
+      else \
+        echo "{ \"_skipped\": true }" > output.json; \
+      fi
+
     input:
+      is_allowed:
+        type: tring
       dckr_pcawg2_song:  # Docker image
         type: string
       song_metadata_url:

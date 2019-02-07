@@ -102,6 +102,32 @@ elif input_format == 'FASTQ':
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
 
+
+aliquot_id = input_metadata['aliquotId']
+number_of_lanes = len(input_metadata['readGroups'])
+study = input_metadata['study']
+
+aws_allowed_studies = { 'LIRI-JP', 'PACA-CA', 'PRAD-CA', 'RECA-EU', 'PAEN-AU',
+                        'PACA-AU', 'BOCA-UK','OV-AU', 'MELA-AU', 'BRCA-UK',
+                        'PRAD-UK', 'CMDI-UK', 'LINC-JP', 'ORCA-IN', 'BTCA-SG',
+                        'LAML-KR', 'LICA-FR', 'CLLE-ES', 'ESAD-UK', 'PAEN-IT' }
+aws_upload_allowed = study in aws_allowed_studies
+
+cgc_allowed_studies = { 'LIRI-JP', 'PACA-CA', 'PRAD-CA', 'RECA-EU', 'PAEN-AU',
+                        'PACA-AU', 'BOCA-UK','OV-AU', 'MELA-AU', 'BRCA-UK',
+                        'PRAD-UK', 'CMDI-UK', 'LINC-JP', 'ORCA-IN', 'BTCA-SG',
+                        'LAML-KR', 'LICA-FR', 'CLLE-ES', 'ESAD-UK', 'PAEN-IT' }
+cgc_upload_allowed = study in cgc_allowed_studies
+
+output.update({
+        'aliquot_id': aliquot_id,
+        'number_of_lanes': number_of_lanes,
+        'study': study,
+        'aws_upload_allowed': aws_upload_allowed,
+        'cgc_upload_allowed': cgc_upload_allowed,
+        'collab_upload_allowed': True  # always true for collab
+    })
+
 # write to the metadata json file
 with open('metadata.json', 'w') as f:
     f.write(json.dumps(metadata, indent=2))
