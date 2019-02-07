@@ -40,7 +40,7 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     dckr_pcawg2_song:
       type: string
-      default: quay.io/pancaner/song-uperations:0.1.0  # need to verify
+      default: quay.io/pancaner/song-uperations:1.0.0
     dckr_score:
       type: string
       default: overture/score:1.5.0  # need to verify
@@ -630,7 +630,7 @@ tools:
           -v ${payload}:/data/payload.json \
           ${dckr_pcawg2_song} \
           uperation sing upload \
-          ${song_metadata_url} ACCESS_TOKEN ${study} /data/payload.json > output.json
+          ${song_metadata_url} $ACCESS_TOKEN ${study} /data/payload.json > output.json
     input:
       payload:
         type: string
@@ -655,7 +655,7 @@ tools:
           -e ACCESS_TOKEN
           ${dckr_pcawg2_song} \
           uperation sing save \
-          ${song_metadata_url} ACCESS_TOKEN ${study} ${upload_id} > output.json
+          ${song_metadata_url} $ACCESS_TOKEN ${study} ${upload_id} > output.json
     input:
       dckr_pcawg2_song:
         type: string
@@ -734,7 +734,7 @@ tools:
           -e ACCESS_TOKEN \
           ${dckr_pcawg2_song} \
           uperation publish \
-          ${song_metadata_url} ACCESS_TOKEN ${study} ${analysis_id}
+          ${song_metadata_url} $ACCESS_TOKEN ${study} ${analysis_id}
     input:
       dckr_pcawg2_song:  # Docker image
         type: string
