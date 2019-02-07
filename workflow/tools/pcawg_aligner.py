@@ -68,6 +68,7 @@ output_path = os.path.join(os.getcwd(), args.output_file_basename)
 
 with open("output.json", "w") as o:
   json.dump({
+    'output_dir': os.getcwd(),
     'merged_output_bai': output_path+'.bam.bai',
     'merged_output_unmapped_metrics': output_path+'.unmapped.bam.metrics',
     'merged_output_bam': output_path+'.bam',

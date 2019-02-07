@@ -116,6 +116,7 @@ elif input_format == 'FASTQ':
             }
             output['download_files'].append(file_info)
 
+    output['output_dir'] = os.getcwd()
 
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
