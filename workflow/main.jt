@@ -6,7 +6,7 @@ workflow:
   name:  bwa-mem-wgs-aligner
   version: "0.0.20"
 
-  env_var:
+  env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
       type: string
       is_required: true
@@ -22,6 +22,12 @@ workflow:
       type: string
       is_file: true
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
+    dckr_pcawg2_song:
+      type: string
+      default: quay.io/pancaner/song-uperations:0.1.0  # need to verify
+    dckr_score:
+      type: string
+      default: overture/score:1.5.0  # need to verify
     pcawg_aligner_dockstore_url:
       type: string
       is_file: true
@@ -136,104 +142,104 @@ workflow:
 
     # may add more QCs if needed
 
-	create_tar:
-		tool: create_tar
-		input:
-			aliquot_id: ###
-			sequencing_strategy: ###
-			genome: ###
+    create_tar:
+      tool: create_tar
+      input:
+        aliquot_id: ###
+        sequencing_strategy: ###
+        genome: ###
 
-	generate_song_payload:
-		tool: generate_song_payload
-		input:
-			metadata_yaml: metadata_yaml
-			bam_file: ###
-			bai_file: ###
-			tar_file: create_tar@tar_file
+    generate_song_payload:
+      tool: generate_song_payload
+      input:
+        metadata_yaml: metadata_yaml
+        bam_file: ###
+        bai_file: ###
+        tar_file: create_tar@tar_file
 
-	upload_song_payload_collab:
-		tool: upload_song_payload
-		input:
-			payload: generate_song_payload@payload
-			song_metadata_url: ### SONG_COLLAB_URL
-			study: ###
-			access_token_global_variable: SONG_TOKEN
+    upload_song_payload_collab:
+      tool: upload_song_payload
+      input:
+        payload: generate_song_payload@payload
+        song_metadata_url: ### SONG_COLLAB_URL
+        study: ###
+        access_token_global_variable: SONG_TOKEN
 
-	upload_song_payload_aws:
-		tool: upload_song_payload
-		input:
-			payload: generate_song_payload@payload
-			song_metadata_url: ### SONG_AWS_URL
-			study: ###
-			access_token_global_variable: SONG_TOKEN
+    upload_song_payload_aws:
+      tool: upload_song_payload
+      input:
+        payload: generate_song_payload@payload
+        song_metadata_url: ### SONG_AWS_URL
+        study: ###
+        access_token_global_variable: SONG_TOKEN
 
-	save_song_payload_collab:
-		tool: save_song_payload
-		input:
-			song_metadata_url: ### SONG_COLLAB_URL
-			study: ###
-			upload_id: upload_song_payload_collab@uploadId
-			access_token_global_variable: SONG_TOKEN
+    save_song_payload_collab:
+      tool: save_song_payload
+      input:
+        song_metadata_url: ### SONG_COLLAB_URL
+        study: ###
+        upload_id: upload_song_payload_collab@uploadId
+        access_token_global_variable: SONG_TOKEN
 
-	save_song_payload_aws:
-		tool: save_song_payload
-		input:
-			song_metadata_url: ### SONG_AWS_URL
-			study: ###
-			upload_id: upload_song_payload_aws@uploadId
-			access_token_global_variable: SONG_TOKEN
+    save_song_payload_aws:
+      tool: save_song_payload
+      input:
+        song_metadata_url: ### SONG_AWS_URL
+        study: ###
+        upload_id: upload_song_payload_aws@uploadId
+        access_token_global_variable: SONG_TOKEN
 
-	create_manifest_file_collab:
-		tool: create_manifest_file
-		input:
-			input_dir: ###
-			song_metadata_url: ### SONG_COLLAB_URL
-			study: ###
-			analysis_id: save_song_payload_collab@analysis_id
-			manifest_file: manifest.txt
+    create_manifest_file_collab:
+      tool: create_manifest_file
+      input:
+        input_dir: ###
+        song_metadata_url: ### SONG_COLLAB_URL
+        study: ###
+        analysis_id: save_song_payload_collab@analysis_id
+        manifest_file: manifest.txt
 
-	create_manifest_file_aws:
-		tool: create_manifest_file
-		input:
-			input_dir: ###
-			song_metadata_url: ### SONG_AWS_URL
-			study: ###
-			analysis_id: save_song_payload_aws@analysis_id
-			manifest_file: manifest.txt
+    create_manifest_file_aws:
+      tool: create_manifest_file
+      input:
+        input_dir: ###
+        song_metadata_url: ### SONG_AWS_URL
+        study: ###
+        analysis_id: save_song_payload_aws@analysis_id
+        manifest_file: manifest.txt
 
-	score_upload_collab:
-		tool: score_upload
-		input:
-			manifest_file: create_manifest_file_collab@manifest_file
-			input_dir: ###
-			song_metadata_url: ### SONG_COLLAB_URL
-			storage_url: ### STORAGE_URL
-			access_token_global_variable: SCORE_TOKEN
+    score_upload_collab:
+      tool: score_upload
+      input:
+        manifest_file: create_manifest_file_collab@manifest_file
+        input_dir: ###
+        song_metadata_url: ### SONG_COLLAB_URL
+        storage_url: ### STORAGE_URL
+        access_token_global_variable: SCORE_TOKEN
 
-	score_upload_aws:
-		tool: score_upload
-		input:
-			manifest_file: create_manifest_file_aws@manifest_file
-			input_dir: ###
-			song_metadata_url: ### SONG_AWS_URL
-			storage_url: ### STORAGE_URL
-			access_token_global_variable: SCORE_TOKEN
+    score_upload_aws:
+      tool: score_upload
+      input:
+        manifest_file: create_manifest_file_aws@manifest_file
+        input_dir: ###
+        song_metadata_url: ### SONG_AWS_URL
+        storage_url: ### STORAGE_URL
+        access_token_global_variable: SCORE_TOKEN
 
-	publish_song_payload_collab:
-		tool: publish_song_payload
-		input:
-			song_metadata_url: ### SONG_COLLAB_URL
-			study: ### study
-			analysis_id: save_song_payload_collab@analysis_id
-			access_token_global_variable: SONG_COLLAB_URL
+    publish_song_payload_collab:
+      tool: publish_song_payload
+      input:
+        song_metadata_url: ### SONG_COLLAB_URL
+        study: ### study
+        analysis_id: save_song_payload_collab@analysis_id
+        access_token_global_variable: SONG_COLLAB_URL
 
-	publish_song_payload_aws:
-		tool: publish_song_payload
-		input:
-			song_metadata_url: ### SONG_AWS_URL
-			study: ### study
-			analysis_id: save_song_payload_aws@analysis_id
-			access_token_global_variable: SONG_AWS_URL
+    publish_song_payload_aws:
+      tool: publish_song_payload
+      input:
+        song_metadata_url: ### SONG_AWS_URL
+        study: ### study
+        analysis_id: save_song_payload_aws@analysis_id
+        access_token_global_variable: SONG_AWS_URL
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
@@ -294,7 +300,6 @@ tools:
           is_file: true
           glob_pattern: "*.bam"
 
-
   revert_bam:
     command: revert_bam.py
 
@@ -334,7 +339,6 @@ tools:
     output:
       unaligned_rg_replace_dir:
         type: string
-
 
   add_comment:
     command: add_comment.py
@@ -525,131 +529,214 @@ tools:
         type: string
         is_file: true
 
-	create_tar:
-		command: |
-			tar_name=$(aliquot_id).$(date +%Y%m%d).$(sequencing_strategy).$(genome)
-			docker_pull
-			docker run -v ../task.download:/data -v ../task.aligned_bam_qc:/aligned_bam_qc -v ../task.add_comment/lane_unaligned:/unaligned_seq_qc -v ../task.aligned_bam_oxog_metrics:/oxog_metrics dckr_pcawg2_song python3 create_tar.py /data/$tar_name /aligned_bam_qc:aligned_bam_qc:multiple_metrics.* /unaligned_seq_qc:unaligned_seq_qc:*.lane.bam.quality_yield_metrics.txt /oxog_metrics:oxog_metrics:oxoG_metrics.txt
-			echo "{'tar_file':$(pwd)../task.download/$tar_name}" > output.json
-		input:
-			aliquot_id:
-				type: string
-			sequencing_strategy:
-				type: string
-			genome:
-				type: string
-		output:
-			tar_file:
-				type: string
+  create_tar:
+    command: |
+      TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
+      && docker_pull ${dckr_pcawg2_song} \
+      && docker run \
+          -v ${task_download_workdir}:/data \
+          -v ${task_aligned_bam_qc_wkdir}:/aligned_bam_qc \
+          -v ${lane_unaligned_dir}:/unaligned_seq_qc \
+          -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
+          ${dckr_pcawg2_song} python3 create_tar.py \
+            /data/$TAR_NAME \
+            /aligned_bam_qc:aligned_bam_qc:multiple_metrics.* \
+            /unaligned_seq_qc:unaligned_seq_qc:*.lane.bam.quality_yield_metrics.txt \
+            /oxog_metrics:oxog_metrics:oxoG_metrics.txt \
+      && echo "{ \"tar_file\": \"${task_download_wkdir}/$TAR_NAME\" }" > output.json
 
-	generate_song_payload:
-		command: |
-			docker run -v $(pwd):/data -v $(metadata_yaml):/metadata.yaml -v $(bam_file):/ef11a76c-fc8a-5098-85b6-ef22195b21fe.1.20190201.wgs.grch37.bam -v $(bai_file):/ef11a76c-fc8a-5098-85b6-ef22195b21fe.1.20190201.wgs.grch37.bam.bai -v $(tar_file):/$(tar_file) -v ../task.add_comment/lane_unaligned:/lane_unaligned -v ../task.aligned_bam_oxog_metrics:/task.aligned_bam_oxog_metrics -v ../task.aligned_bam_qc:/task.aligned_bam_qc dckr_pcawg2_song python3 generate_song_payload.py /metadata.yaml /$bam_file /$bai_file /$tar_file /lane_unaligned /task.aligned_bam_oxog_metrics /task.aligned_bam_qc | jq > payload.json
-			echo "{'payload':$(pwd)/payload.json}" > output.json
-		input:
-			metadata_yaml:
-				type: string
-				is_file: true
-			bam_file:
-				type: string
-				is_file: true
-			bai_file:
-				type: string
-				is_file: true
-			tar_file:
-				type: string
-				is_file: true
-		output:
-			payload:
-				type: string
-				is_file: true
+    input:
+      aliquot_id:
+        type: string
+      number_of_lanes:
+        type: integer
+      dckr_pcawg2_song:
+        type: string
+      task_download_wkdir:
+        type: string
+      task_aligned_bam_qc_wkdir:
+        type: string
+      lane_unaligned_dir:
+        type: string
+      task_aligned_bam_oxog_metrics_wkdir:
+        type: string
 
-	upload_song_payload:
-		command: |
-			docker pull quay.io/pancancer/song-uperations
-			docker run docker run --net=host -e ACCESS_TOKEN=$(access_token_global_variable) -v $(payload):/payload.json quay.io/pancancer/song-uperations uperation sing upload $(song_metadata_url) ACCESS_TOKEN $(study) /payload.json > output.json
-		input:
-			payload:
-				type: string
-				is_file: true
-			song_metadata_url:
-				type: string
-			study:
-				type: string
-			access_token_global_variable:
-				type: string
-		output:
-			status:
-				type: string
-			uploadId:
-				type: string
+    output:
+      tar_file:
+        type: string
+        is_file: true
 
-	save_song_payload:
-		command: |
-			docker pull quay.io/pancancer/song-uperations
-			docker run --net=host -e ACCESS_TOKEN=$(access_token_global_variable) quay.io/pancancer/song-uperations uperation sing save $(song_metadata_url) ACCESS_TOKEN $(study) $(upload_id) > output.json
-		input:
-			song_metadata_url:
-				type: string
-			study:
-				type: string
-			upload_id:
-				type: string
-			access_token_global_variable:
-				type: string
-		output:
-			status:
-				type: string
-			analysis_id:
-				type: string
+  generate_song_payload:
+    command: |
+      docker_pull ${dckr_pcawg2_song} \
+      && docker run \
+        -v $(pwd):/data \
+        -v ${metadata_yaml}:/metadata.yaml:ro \  # should these file be mounted directly under root?
+        -v ${bam_file}:/ef11a76c-fc8a-5098-85b6-ef22195b21fe.1.20190201.wgs.grch37.bam \
+        -v ${bai_file}:/ef11a76c-fc8a-5098-85b6-ef22195b21fe.1.20190201.wgs.grch37.bam.bai \
+        -v ${tar_file}:/${tar_file} \
+        -v ${lane_unaligned_dir}:/lane_unaligned \
+        -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
+        -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
+        dckr_pcawg2_song python3 generate_song_payload.py \
+          /metadata.yaml \
+          /$bam_file \
+          /$bai_file \
+          /$tar_file \
+          /lane_unaligned \
+          /task_aligned_bam_oxog_metrics_wkdir \
+          /task_aligned_bam_qc_wkdir | jq > payload.json \
+      && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
-	create_manifest_file:
-		command: |
-			docker pull quay.io/pancancer/song-uperations
-			docker run --net=host -v $(pwd):/output -v $(input_dir):/data quay.io/pancancer/song-uperations uperation sing manifest $(song_metadata_url) $(study) $(analysis_id) ./ $(manifest_file)
-			echo "{'manifest_file':$(manifest_file)}" > output.json
-		input:
-			input_dir:
-				type: string
-			song_metadata_url:
-				type: string
-			study:
-				type: string
-			analysis_id:
-				type: string
-			manifest_file:
-				type: string
-				is_file: true
-		output:
-			manifest_file
+    input:
+      dckr_pcawg2_song:
+        type: string
+      metadata_yaml:
+        type: string
+        is_file: true
+      bam_file:
+        type: string
+        is_file: true
+      bai_file:
+        type: string
+        is_file: true
+      tar_file:
+        type: string
+        is_file: true
+      lane_unaligned_dir:
+        type: string
+    output:
+      payload:
+        type: string
+        is_file: true
 
-	score_upload:
-		command: |
-			docker pull overture/score
-			docker run --net=host -v $(manifest_file):/manifest.txt -v $(input_dir):/data -e ACCESS_TOKEN=$(access_token_global_variable) -e STORAGE_URL=$(storage_url) -e METADATA_URL=$(song_metadata_url) overture/score bin/score-client upload --manifest /manifest.txt --force
-		input:
-			manifest_file:
-				type: string
-				is_file: true
-			input_dir:
-				type: string
-			song_metadata_url:
-				type: string
-			storage_url:
-				type: string
-			access_token_global_variable:
-				type: string
+  upload_song_payload:
+    command: |
+      docker pull ${dckr_pcawg2_song} \
+      && docker run \
+          --net=host \
+          -e ACCESS_TOKEN=$(access_token_global_variable) \  # JT will not pass tokens
+          -v ${payload}:/payload.json \
+          ${dckr_pcawg2_song} \
+          uperation sing upload \
+          ${song_metadata_url} ACCESS_TOKEN ${study} /payload.json > output.json
+    input:
+      dckr_pcawg2_song:  # Docker image
+        type: string
+      payload:
+        type: string
+        is_file: true
+      song_metadata_url:
+        type: string
+      study:
+        type: string
+      access_token_global_variable:
+        type: string
+    output:
+      status:
+        type: string
+      uploadId:
+        type: string
 
-	publish_song_payload:
-		command: |
-			docker pull quay.io/pancancer/song-uperations
-			docker run --net=host quay.io/pancancer/song-uperations uperation publish $(song_metadata_url) $(access_token_global_variable) $(study) $(analysis_id)
-		input:
-			song_metadata_url:
-				type: string
-			study:
-				type: string
-			analysis_id:
-				type: string
-			access_token_global_variable:
-				type: string
+  save_song_payload:
+    command: |
+      docker pull ${dckr_pcawg2_song} \
+      && docker run \
+          --net=host \
+          -e ACCESS_TOKEN=$(access_token_global_variable) \  # JT will not pass tokens
+          ${dckr_pcawg2_song} \
+          uperation sing save \
+          ${song_metadata_url} ACCESS_TOKEN ${study} ${upload_id} > output.json
+    input:
+      dckr_pcawg2_song:  # Docker image
+        type: string
+      song_metadata_url:
+        type: string
+      study:
+        type: string
+      upload_id:
+        type: string
+      access_token_global_variable:  # JT does not pass tokens
+        type: string
+    output:
+      status:
+        type: string
+      analysis_id:
+        type: string
+
+  create_manifest_file:
+    command: |
+      docker pull ${dckr_pcawg2_song} \
+      && docker run \
+          --net=host \
+          -v $(pwd):/output \
+          -v $(input_dir):/data \
+          ${dckr_pcawg2_song} \
+          uperation sing manifest \
+          ${song_metadata_url} ${study} ${analysis_id} ./ ${manifest_file} \
+      && echo "{\"manifest_file\": \"${manifest_file}\" }" > output.json
+    input:
+      dckr_pcawg2_song:  # Docker image
+        type: string
+      input_dir:
+        type: string
+      song_metadata_url:
+        type: string
+      study:
+        type: string
+      analysis_id:
+        type: string
+      manifest_file:
+        type: string
+        is_file: true
+    output:
+      manifest_file:
+        type: string
+        is_file: true
+
+  score_upload:
+    command: |
+      docker pull ${dckr_score} \
+      && docker run \
+          --net=host \
+          -v ${manifest_file}:/manifest.txt \
+          -v ${input_dir}:/data \
+          -e ACCESS_TOKEN=$(access_token_global_variable) \  # JT does not pass tokens
+          -e STORAGE_URL=${storage_url} \
+          -e METADATA_URL=${song_metadata_url} \
+          ${dckr_score} \
+          bin/score-client upload --manifest /manifest.txt --force
+    input:
+      dckr_score:
+        type: string
+      manifest_file:
+        type: string
+        is_file: true
+      input_dir:
+        type: string
+      song_metadata_url:
+        type: string
+      storage_url:
+        type: string
+      access_token_global_variable:
+        type: string
+
+  publish_song_payload:
+    command: |
+      docker pull ${dckr_pcawg2_song} \
+      && docker run \
+          --net=host \
+          ${dckr_pcawg2_song} \
+          uperation publish \
+          ${song_metadata_url} $(access_token_global_variable) ${study} ${analysis_id}
+    input:
+      dckr_pcawg2_song:  # Docker image
+        type: string
+      song_metadata_url:
+        type: string
+      study:
+        type: string
+      analysis_id:
+        type: string
+      access_token_global_variable:
+        type: string
