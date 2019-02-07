@@ -615,7 +615,7 @@ tools:
       docker pull ${dckr_pcawg2_song} \
       && docker run \
           --net=host \
-          -e ACCESS_TOKEN=$(access_token_global_variable) \  # JT will not pass tokens
+          -e ACCESS_TOKEN \ 
           -v ${payload}:/payload.json \
           ${dckr_pcawg2_song} \
           uperation sing upload \
