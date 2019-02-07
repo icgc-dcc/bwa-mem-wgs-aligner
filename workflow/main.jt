@@ -166,28 +166,28 @@ workflow:
         task_download_wkdir: output_dir@download
         task_aligned_bam_qc_wkdir: output_dir@aligned_bam_oxog_metrics
         lane_unaligned_dir: unaligned_by_rg_dir@revert_bam
-        task_aligned_bam_oxog_metrics_wkdir: aligned_bam_oxog_metrics@output_dir
+        task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
 
     generate_song_payload:
       tool: generate_song_payload
       input:
         metadata_yaml: metadata_yaml
-        bam_file: pcawg_aligner@merged_output_bam
-        bai_file: pcawg_aligner@merged_output_bai
-        tar_file: create_tar@tar_file
+        bam_file: merged_output_bam@pcawg_aligner
+        bai_file: merged_output_bai@pcawg_aligner
+        tar_file: tar_file@create_tar
 
     upload_song_payload_collab:
       tool: upload_song_payload
       input:
-        payload: generate_song_payload@payload
+        payload: payload@generate_song_payload
         song_metadata_url: song_collab_url
         study: study
 
     upload_song_payload_aws:
       tool: upload_song_payload
       input:
-        payload: generate_song_payload@payload
+        payload: payload@generate_song_payload
         song_metadata_url: song_aws_url
         study: study
 
@@ -196,14 +196,14 @@ workflow:
       input:
         song_metadata_url: song_collab_url
         study: study
-        upload_id: upload_song_payload_collab@uploadId
+        upload_id: uploadId@upload_song_payload_collab
 
     save_song_payload_aws:
       tool: save_song_payload
       input:
         song_metadata_url: song_aws_url
         study: study
-        upload_id: upload_song_payload_aws@uploadId
+        upload_id: uploadId@upload_song_payload_aws
 
     create_manifest_file_collab:
       tool: create_manifest_file
@@ -211,7 +211,7 @@ workflow:
         input_dir: ###
         song_metadata_url: song_collab_url
         study: study
-        analysis_id: save_song_payload_collab@analysis_id
+        analysis_id: analysis_id@save_song_payload_collab
         manifest_file: manifest.txt
 
     create_manifest_file_aws:
@@ -220,13 +220,13 @@ workflow:
         input_dir: ###
         song_metadata_url: song_aws_url
         study: study
-        analysis_id: save_song_payload_aws@analysis_id
+        analysis_id: analysis_id@save_song_payload_aws
         manifest_file: manifest.txt
 
     score_upload_collab:
       tool: score_upload
       input:
-        manifest_file: create_manifest_file_collab@manifest_file
+        manifest_file: manifest_file@create_manifest_file_collab
         input_dir: ###
         song_metadata_url: song_collab_url
         storage_url: storage_collab_url
@@ -234,7 +234,7 @@ workflow:
     score_upload_aws:
       tool: score_upload
       input:
-        manifest_file: create_manifest_file_aws@manifest_file
+        manifest_file: manifest_file@create_manifest_file_aws
         input_dir: ###
         song_metadata_url: song_aws_url
         storage_url: storage_aws_url
@@ -244,14 +244,14 @@ workflow:
       input:
         song_metadata_url: song_collab_url
         study: study
-        analysis_id: save_song_payload_collab@analysis_id
+        analysis_id: analysis_id@save_song_payload_collab
 
     publish_song_payload_aws:
       tool: publish_song_payload
       input:
         song_metadata_url: song_aws_url
         study: study
-        analysis_id: save_song_payload_aws@analysis_id
+        analysis_id: analysis_id@save_song_payload_aws
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
