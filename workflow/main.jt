@@ -161,10 +161,11 @@ workflow:
     create_tar:
       tool: create_tar
       input:
-        aliquot_id: aliquot_id
-        number_of_lanes: 1
-        task_download_wkdir: output_dir@download
-        task_aligned_bam_qc_wkdir: output_dir@aligned_bam_oxog_metrics
+        aliquot_id: aliquot_id@validate_metadata
+        number_of_lanes: number_of_lanes@validate_metadata
+        dckr_pcawg2_song: dckr_pcawg2_song
+        task_pcawg_aligner_wkdir: task_pcawg_aligner_wkdir@pcawg_aligner
+        task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
         lane_unaligned_dir: unaligned_by_rg_dir@revert_bam
         task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
@@ -172,43 +173,48 @@ workflow:
     generate_song_payload:
       tool: generate_song_payload
       input:
+        dckr_pcawg2_song: dckr_pcawg2_song
         metadata_yaml: metadata_yaml
         bam_file: merged_output_bam@pcawg_aligner
         bai_file: merged_output_bai@pcawg_aligner
         tar_file: tar_file@create_tar
+        task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
+        lane_unaligned_dir: unaligned_by_rg_dir@revert_bam
+        task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
+
 
     upload_song_payload_collab:
       tool: upload_song_payload
       input:
         payload: payload@generate_song_payload
         song_metadata_url: song_collab_url
-        study: study
+        study: study@validate_metadata
 
     upload_song_payload_aws:
       tool: upload_song_payload
       input:
         payload: payload@generate_song_payload
         song_metadata_url: song_aws_url
-        study: study
+        study: study@validate_metadata
 
     save_song_payload_collab:
       tool: save_song_payload
       input:
         song_metadata_url: song_collab_url
-        study: study
+        study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_collab
 
     save_song_payload_aws:
       tool: save_song_payload
       input:
         song_metadata_url: song_aws_url
-        study: study
+        study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_aws
 
     create_manifest_file_collab:
       tool: create_manifest_file
       input:
-        input_dir: ###
+        input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_collab_url
         study: study
         analysis_id: analysis_id@save_song_payload_collab
@@ -217,7 +223,7 @@ workflow:
     create_manifest_file_aws:
       tool: create_manifest_file
       input:
-        input_dir: ###
+        input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_aws_url
         study: study
         analysis_id: analysis_id@save_song_payload_aws
@@ -227,7 +233,7 @@ workflow:
       tool: score_upload
       input:
         manifest_file: manifest_file@create_manifest_file_collab
-        input_dir: ###
+        input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_collab_url
         storage_url: storage_collab_url
 
@@ -235,7 +241,7 @@ workflow:
       tool: score_upload
       input:
         manifest_file: manifest_file@create_manifest_file_aws
-        input_dir: ###
+        input_dir: task_pcawg_aligner_wkdir@pcawg_aligner
         song_metadata_url: song_aws_url
         storage_url: storage_aws_url
 
@@ -270,6 +276,12 @@ tools:
       metadata_json:
         type: string
         is_file: true
+      aliquot_id:
+        type: string
+      number_of_lanes:
+        type: integer
+      study:
+        type: string
 
   download:
     command: download.py
@@ -473,6 +485,8 @@ tools:
         type: string
         is_file: true
     output:  # output section is ignored for now
+      task_pcawg_aligner_wkdir:
+        type: string
       merged_output_bam:
         type: string
         is_file: true
@@ -520,6 +534,8 @@ tools:
         type: string
         is_file: true
     output:
+      output_dir:
+        type: string
       metrics_files:
         type: array
         items:
@@ -543,14 +559,17 @@ tools:
       reference_sequence:
         type: string
         is_file: true
+    output:
+      output_dir:
+        type: string
 
   create_tar:
     command: |
       TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
       && docker_pull ${dckr_pcawg2_song} \
       && docker run \
-          -v ${task_download_workdir}:/data \
-          -v ${task_aligned_bam_qc_wkdir}:/aligned_bam_qc \
+          -v ${task_pcawg_aligner_wkdir}:/data \
+          -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_unaligned_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
           ${dckr_pcawg2_song} python3 create_tar.py \
@@ -558,16 +577,18 @@ tools:
             /aligned_bam_qc:aligned_bam_qc:multiple_metrics.* \
             /unaligned_seq_qc:unaligned_seq_qc:*.lane.bam.quality_yield_metrics.txt \
             /oxog_metrics:oxog_metrics:oxoG_metrics.txt \
-      && echo "{ \"tar_file\": \"${task_download_wkdir}/$TAR_NAME\" }" > output.json
+      && echo "{ \"tar_file\": \"${task_pcawg_aligner_wkdir}/$TAR_NAME\" }" > output.json
 
     input:
-      aliquot_id: #######
+      aliquot_id:
         type: string
-      number_of_lanes: #######
+      number_of_lanes:
         type: integer
-      task_download_wkdir:
+      dckr_pcawg2_song:
         type: string
-      task_aligned_bam_qc_wkdir:
+      task_pcawg_aligner_wkdir:
+        type: string
+      task_aligned_bam_qc_outdir:
         type: string
       lane_unaligned_dir:
         type: string
@@ -587,7 +608,7 @@ tools:
         -v ${metadata_yaml}:/metadata.yaml:ro \  # should these file be mounted directly under root?
         -v ${bam_file}:/$(basename ${bam_file}) \
         -v ${bai_file}:/$(basename ${bai_file}) \
-        -v ${tar_file}:/${tar_file} \
+        -v ${tar_file}:/$(basename {tar_file}) \
         -v ${lane_unaligned_dir}:/lane_unaligned \
         -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
         -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
@@ -598,10 +619,12 @@ tools:
           /$tar_file \
           /lane_unaligned \
           /task_aligned_bam_oxog_metrics_wkdir \
-          /task_aligned_bam_qc_wkdir | jq > payload.json \
+          /task_aligned_bam_qc_outdir | jq > payload.json \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
+      dckr_pcawg2_song:
+        type: string
       metadata_yaml:
         type: string
         is_file: true
@@ -615,6 +638,10 @@ tools:
         type: string
         is_file: true
       lane_unaligned_dir:
+        type: string
+      task_aligned_bam_oxog_metrics_wkdir:
+        type: string
+      task_aligned_bam_qc_outdir:
         type: string
     output:
       payload:
@@ -637,7 +664,7 @@ tools:
         is_file: true
       song_metadata_url:
         type: string
-      study: ########
+      study:
         type: string
       dckr_pcawg2_song:
         type: string
@@ -677,7 +704,7 @@ tools:
       && docker run \
           --net=host \
           -v $(pwd):/output \
-          -v $(input_dir):/data \
+          -v ${input_dir}:/data \
           ${dckr_pcawg2_song} \
           uperation sing manifest \
           ${song_metadata_url} ${study} ${analysis_id} ./ ${manifest_file} \
