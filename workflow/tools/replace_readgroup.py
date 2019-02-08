@@ -82,8 +82,6 @@ if input_format == 'BAM':
     if os.path.isdir(unaligned_by_rg_dir): shutil.rmtree(unaligned_by_rg_dir)
 
 elif input_format == 'FASTQ':
-    # sleep 60 seconds and pass through the parameters
-    time.sleep(60)
     pass
 
 else:

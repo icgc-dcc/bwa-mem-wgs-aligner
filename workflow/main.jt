@@ -560,7 +560,7 @@ tools:
       java -jar ${picard_jar} CollectOxoGMetrics \
         I=${aligned_bam} \
         O=oxoG_metrics.txt \
-        R=${reference_sequence}
+        R=${reference_sequence} \
       && echo "{ \"output_dir\": \"$(pwd)" }" > output.json
     input:
       picard_jar:

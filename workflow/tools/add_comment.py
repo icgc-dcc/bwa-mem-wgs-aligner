@@ -64,7 +64,6 @@ if input_format == 'BAM':
     if os.path.isdir(unaligned_rg_replace_dir): shutil.rmtree(unaligned_rg_replace_dir)
 
 elif input_format == 'FASTQ':
-    time.sleep(60)
     output['bams'] = task_dict['input'].get('bams')
 
 else:

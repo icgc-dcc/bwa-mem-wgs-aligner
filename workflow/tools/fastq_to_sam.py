@@ -100,8 +100,6 @@ if input_format == 'FASTQ':
 
 # the inputs are BAM
 elif input_format == 'BAM':
-    # sleep 60 seconds and pass through
-    time.sleep(60)
     pass
 
 else:

@@ -64,8 +64,6 @@ if input_format == 'BAM':
 
 
 elif input_format == 'FASTQ':
-    # sleep 60 seconds and pass through the parameters
-    time.sleep(60)
     pass
 
 else:
