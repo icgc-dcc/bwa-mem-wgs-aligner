@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.25"
+  version: "0.0.26"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -576,8 +576,8 @@ tools:
 
   create_tar:
     command: |
-      TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tgz \
-      && docker_pull ${dckr_pcawg2_song} \
+      TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
+      && docker pull ${dckr_pcawg2_song} \
       && docker run \
           --user 1000:1000 \
           --workdir / \
@@ -615,7 +615,7 @@ tools:
 
   generate_song_payload:
     command: |
-      docker_pull ${dckr_pcawg2_song} \
+      docker pull ${dckr_pcawg2_song} \
       && docker run \
           --user 1000:1000 \
           -v $(pwd):/data \
