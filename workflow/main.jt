@@ -34,9 +34,12 @@ workflow:
       type: string
       is_file: true
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
-    dckr_pcawg2_song:
+    docker_song:
       type: string
       default: quay.io/pancancer/song-uperations:1.0.0
+    util_dckr:
+      type: string
+      default: quay.io/pancancer/util_dckr:0.0.1
     dckr_score:
       type: string
       default: overture/score:1.5.0  # need to verify
@@ -159,7 +162,7 @@ workflow:
       input:
         aliquot_id: aliquot_id@validate_metadata
         number_of_lanes: number_of_lanes@validate_metadata
-        dckr_pcawg2_song: dckr_pcawg2_song
+        docker_song: docker_song
         output_dir: output_dir@pcawg_aligner
         task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
         lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
@@ -169,7 +172,8 @@ workflow:
     generate_song_payload:
       tool: generate_song_payload
       input:
-        dckr_pcawg2_song: dckr_pcawg2_song
+        docker_song: docker_song
+        util_dckr: util_dckr
         metadata_yaml: metadata_yaml
         bam_file: merged_output_bam@pcawg_aligner
         bai_file: merged_output_bai@pcawg_aligner
@@ -581,7 +585,7 @@ tools:
   create_tar:
     command: |
       TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
-      && docker pull ${dckr_pcawg2_song} 2> std.err \
+      && docker pull ${docker_song} 2> std.err \
       && docker run \
           --user 1000:1000 \
           --workdir / \
@@ -589,7 +593,7 @@ tools:
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_bam_qc_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${dckr_pcawg2_song} tar czf \
+          ${docker_song} tar czf \
             /data/$TAR_NAME \
             aligned_bam_qc/multiple_metrics.* \
             unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt \
@@ -601,7 +605,7 @@ tools:
         type: string
       number_of_lanes:
         type: integer
-      dckr_pcawg2_song:
+      docker_song:
         type: string
       output_dir:
         type: string
@@ -619,7 +623,7 @@ tools:
 
   generate_song_payload:
     command: |
-      docker pull ${dckr_pcawg2_song} 2> std.err \
+      docker pull ${util_dckr} 2> std.err \
       && docker run \
           --user 1000:1000 \
           -v $(pwd):/data \
@@ -630,7 +634,7 @@ tools:
           -v ${lane_bam_qc_dir}:/lane_unaligned \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
           -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
-          ${dckr_pcawg2_song} python3 generate_song_payload.py \
+          ${util_dckr} python3 generate_song_payload.py \
             /metadata.yaml \
             /$bam_file \
             /$bai_file \
@@ -641,7 +645,7 @@ tools:
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
-      dckr_pcawg2_song:
+      util_dckr:
         type: string
       metadata_yaml:
         type: string
@@ -669,12 +673,12 @@ tools:
   upload_song_payload:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} 2> std.err \
+        docker pull ${docker_song} 2> std.err \
         && docker run \
             --net=host \
             -e ACCESS_TOKEN \
             -v ${payload}:/data/payload.json \
-            ${dckr_pcawg2_song} \
+            ${docker_song} \
             uperation sing upload \
               --song-url ${song_metadata_url} \
               --study ${study} \
@@ -693,7 +697,7 @@ tools:
         type: string
       study:
         type: string
-      dckr_pcawg2_song:
+      docker_song:
         type: string
     output:
       status:
@@ -704,11 +708,11 @@ tools:
   save_song_payload:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} 2> std.err \
+        docker pull ${docker_song} 2> std.err \
         && docker run \
             --net=host \
             -e ACCESS_TOKEN \
-            ${dckr_pcawg2_song} \
+            ${docker_song} \
             uperation sing save \
               --song-url ${song_metadata_url} \
               --study ${study} \
@@ -720,7 +724,7 @@ tools:
     input:
       is_allowed:
         type: tring
-      dckr_pcawg2_song:
+      docker_song:
         type: string
       song_metadata_url:
         type: string
@@ -737,12 +741,12 @@ tools:
   create_manifest_file:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} 2> std.err \
+        docker pull ${docker_song} 2> std.err \
         && docker run \
             --net=host \
             -v $(pwd):/output \
             -v ${input_dir}:/data \
-            ${dckr_pcawg2_song} \
+            ${docker_song} \
             uperation sing manifest \
               --song-url ${song_metadata_url} \
               --study ${study} \
@@ -757,7 +761,7 @@ tools:
     input:
       is_allowed:
         type: tring
-      dckr_pcawg2_song:  # Docker image
+      docker_song:  # Docker image
         type: string
       input_dir:
         type: string
@@ -808,11 +812,11 @@ tools:
   publish_song_payload:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} \
+        docker pull ${docker_song} \
         && docker run \
             --net=host \
             -e ACCESS_TOKEN \
-            ${dckr_pcawg2_song} \
+            ${docker_song} \
             uperation publish \
               --song-url ${song_metadata_url} \
               --study ${study} \
@@ -824,7 +828,7 @@ tools:
     input:
       is_allowed:
         type: tring
-      dckr_pcawg2_song:  # Docker image
+      docker_song:  # Docker image
         type: string
       song_metadata_url:
         type: string
