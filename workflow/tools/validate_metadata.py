@@ -121,7 +121,7 @@ cgc_upload_allowed = study in cgc_allowed_studies
 
 output.update({
         'aliquot_id': aliquot_id,
-        'number_of_lanes': number_of_lanes,
+        'number_of_lanes': str(number_of_lanes),
         'study': study,
         'aws_upload_allowed': aws_upload_allowed,
         'cgc_upload_allowed': cgc_upload_allowed,

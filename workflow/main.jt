@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.26"
+  version: "0.0.27"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -162,7 +162,7 @@ workflow:
         dckr_pcawg2_song: dckr_pcawg2_song
         output_dir: output_dir@pcawg_aligner
         task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
-        lane_unaligned_dir: unaligned_by_rg_dir@revert_bam
+        lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
         task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
 
@@ -175,7 +175,7 @@ workflow:
         bai_file: merged_output_bai@pcawg_aligner
         tar_file: tar_file@create_tar
         task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
-        lane_unaligned_dir: unaligned_by_rg_dir@revert_bam
+        lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
         task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
 
@@ -410,14 +410,17 @@ tools:
   lane_bam_qc:
     command: |
       python -c '
+      import os
       import sys
       import json
       import subprocess
       lane_bams = sys.argv[1].split(",")
 
       metrics = []
+      bam_dir = None
       for bam in lane_bams:
         metrics_file = "%s.quality_yield_metrics.txt" % bam
+        lane_bam_qc_dir = os.path.dirname(os.path.abspath(bam))
         command = "java -jar ${picard_jar} CollectQualityYieldMetrics I=%s O=%s" % (bam, metrics_file)
         try:
           p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -427,7 +430,8 @@ tools:
         metrics.append(metrics_file)
 
       print(json.dumps({
-        "metrics": metrics
+        "metrics": metrics,
+        "lane_bam_qc_dir": lane_bam_qc_dir
       }))
 
       ' ${sep=',' lane_bams} > output.json 2> std.err
@@ -533,7 +537,7 @@ tools:
         METRIC_ACCUMULATION_LEVEL="ALL_READS" \
         METRIC_ACCUMULATION_LEVEL="SAMPLE" \
         METRIC_ACCUMULATION_LEVEL="LIBRARY" \
-        METRIC_ACCUMULATION_LEVEL="READ_GROUP" \
+        METRIC_ACCUMULATION_LEVEL="READ_GROUP" 2> std.err \
       && echo "{ \"output_dir\": \"$(pwd)\" }" > output.json
     input:
       picard_jar:
@@ -559,7 +563,7 @@ tools:
       java -jar ${picard_jar} CollectOxoGMetrics \
         I=${aligned_bam} \
         O=oxoG_metrics.txt \
-        R=${reference_sequence} \
+        R=${reference_sequence} 2> std.err \
       && echo "{ \"output_dir\": \"$(pwd)\" }" > output.json
     input:
       picard_jar:
@@ -577,19 +581,19 @@ tools:
   create_tar:
     command: |
       TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
-      && docker pull ${dckr_pcawg2_song} \
+      && docker pull ${dckr_pcawg2_song} 2> std.err \
       && docker run \
           --user 1000:1000 \
           --workdir / \
           -v ${output_dir}:/data \
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
-          -v ${lane_unaligned_dir}:/unaligned_seq_qc \
+          -v ${lane_bam_qc_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
           ${dckr_pcawg2_song} tar czf \
             /data/$TAR_NAME \
             aligned_bam_qc/multiple_metrics.* \
             unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt \
-            oxog_metrics/oxoG_metrics.txt \
+            oxog_metrics/oxoG_metrics.txt 2> std.err \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:
@@ -603,7 +607,7 @@ tools:
         type: string
       task_aligned_bam_qc_outdir:
         type: string
-      lane_unaligned_dir:
+      lane_bam_qc_dir:
         type: string
       task_aligned_bam_oxog_metrics_wkdir:
         type: string
@@ -615,7 +619,7 @@ tools:
 
   generate_song_payload:
     command: |
-      docker pull ${dckr_pcawg2_song} \
+      docker pull ${dckr_pcawg2_song} 2> std.err \
       && docker run \
           --user 1000:1000 \
           -v $(pwd):/data \
@@ -623,7 +627,7 @@ tools:
           -v ${bam_file}:/$(basename ${bam_file}) \
           -v ${bai_file}:/$(basename ${bai_file}) \
           -v ${tar_file}:/$(basename {tar_file}) \
-          -v ${lane_unaligned_dir}:/lane_unaligned \
+          -v ${lane_bam_qc_dir}:/lane_unaligned \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
           -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
           ${dckr_pcawg2_song} python3 generate_song_payload.py \
@@ -633,7 +637,7 @@ tools:
             /$tar_file \
             /lane_unaligned \
             /task_aligned_bam_oxog_metrics_wkdir \
-            /task_aligned_bam_qc_outdir > /data/payload.json \
+            /task_aligned_bam_qc_outdir > /data/payload.json 2> std.err \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
@@ -651,7 +655,7 @@ tools:
       tar_file:
         type: string
         is_file: true
-      lane_unaligned_dir:
+      lane_bam_qc_dir:
         type: string
       task_aligned_bam_oxog_metrics_wkdir:
         type: string
@@ -665,7 +669,7 @@ tools:
   upload_song_payload:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} \
+        docker pull ${dckr_pcawg2_song} 2> std.err \
         && docker run \
             --net=host \
             -e ACCESS_TOKEN \
@@ -674,7 +678,7 @@ tools:
             uperation sing upload \
               --song-url ${song_metadata_url} \
               --study ${study} \
-              --payload /data/payload.json > output.json; \
+              --payload /data/payload.json > output.json 2> std.err; \
       else \
         echo "{ \"_skipped\": true }" > output.json; \
       fi
@@ -700,7 +704,7 @@ tools:
   save_song_payload:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} \
+        docker pull ${dckr_pcawg2_song} 2> std.err \
         && docker run \
             --net=host \
             -e ACCESS_TOKEN \
@@ -708,7 +712,7 @@ tools:
             uperation sing save \
               --song-url ${song_metadata_url} \
               --study ${study} \
-              --upload-id ${upload_id} > output.json; \
+              --upload-id ${upload_id} > output.json 2> std.err; \
       else \
         echo "{ \"_skipped\": true }" > output.json; \
       fi
@@ -733,7 +737,7 @@ tools:
   create_manifest_file:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_pcawg2_song} \
+        docker pull ${dckr_pcawg2_song} 2> std.err \
         && docker run \
             --net=host \
             -v $(pwd):/output \
@@ -744,7 +748,7 @@ tools:
               --study ${study} \
               --analysis ${analysis_id} \
               --files-dir ./ \
-              --manifest $(echo -n 'manifest.txt')} \
+              --manifest $(echo -n 'manifest.txt')} 2> std.err \
         && echo "{ \"manifest_file\": \"$(pwd)/manifest.txt\" }" > output.json; \
       else \
         echo "{ \"_skipped\": true }" > output.json; \
@@ -771,7 +775,7 @@ tools:
   score_upload:
     command: |
       if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_score} \
+        docker pull ${dckr_score} 2> std.err \
         && docker run \
             --net=host \
             -v ${manifest_file}:/manifest.txt \
@@ -781,7 +785,7 @@ tools:
             -e METADATA_URL=${song_metadata_url} \
             ${dckr_score} \
             bin/score-client upload \
-              --manifest /manifest.txt --force; \
+              --manifest /manifest.txt --force 2> std.err; \
       else \
         echo "{ \"_skipped\": true }" > output.json; \
       fi
@@ -812,7 +816,7 @@ tools:
             uperation publish \
               --song-url ${song_metadata_url} \
               --study ${study} \
-              --analysis-id ${analysis_id}; \
+              --analysis-id ${analysis_id} 2> std.err; \
       else \
         echo "{ \"_skipped\": true }" > output.json; \
       fi
