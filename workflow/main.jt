@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.27"
+  version: "0.0.28"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -584,20 +584,17 @@ tools:
 
   create_tar:
     command: |
-      TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
-      && docker pull ${docker_song} 2> std.err \
+      docker pull ${docker_song} 2> std.err \
+      && TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tgz \
       && docker run \
+          --rm \
           --user 1000:1000 \
           --workdir / \
           -v ${output_dir}:/data \
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_bam_qc_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${docker_song} tar czf \
-            /data/$TAR_NAME \
-            aligned_bam_qc/multiple_metrics.* \
-            unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt \
-            oxog_metrics/oxoG_metrics.txt 2> std.err \
+          ${docker_song} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" 2> std.err \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:
@@ -625,6 +622,7 @@ tools:
     command: |
       docker pull ${util_dckr} 2> std.err \
       && docker run \
+          --rm \
           --user 1000:1000 \
           -v $(pwd):/data \
           -v ${metadata_yaml}:/metadata.yaml:ro \  # should these file be mounted directly under root?
@@ -675,6 +673,7 @@ tools:
       if [ "${is_allowed}" = true ]; then \
         docker pull ${docker_song} 2> std.err \
         && docker run \
+            --rm \
             --net=host \
             -e ACCESS_TOKEN \
             -v ${payload}:/data/payload.json \
@@ -710,6 +709,7 @@ tools:
       if [ "${is_allowed}" = true ]; then \
         docker pull ${docker_song} 2> std.err \
         && docker run \
+            --rm \
             --net=host \
             -e ACCESS_TOKEN \
             ${docker_song} \
@@ -743,6 +743,7 @@ tools:
       if [ "${is_allowed}" = true ]; then \
         docker pull ${docker_song} 2> std.err \
         && docker run \
+            --rm \
             --net=host \
             -v $(pwd):/output \
             -v ${input_dir}:/data \
@@ -781,6 +782,7 @@ tools:
       if [ "${is_allowed}" = true ]; then \
         docker pull ${dckr_score} 2> std.err \
         && docker run \
+            --rm \
             --net=host \
             -v ${manifest_file}:/manifest.txt \
             -v ${input_dir}:/data \
@@ -814,6 +816,7 @@ tools:
       if [ "${is_allowed}" = true ]; then \
         docker pull ${docker_song} \
         && docker run \
+            --rm \
             --net=host \
             -e ACCESS_TOKEN \
             ${docker_song} \
