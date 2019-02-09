@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.28"
+  version: "0.0.29"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -39,7 +39,7 @@ workflow:
       default: quay.io/pancancer/song-uperations:1.0.0
     util_dckr:
       type: string
-      default: quay.io/pancancer/util_dckr:0.0.1
+      default: quay.io/pancancer/util_dckr:0.0.3
     dckr_score:
       type: string
       default: overture/score:1.5.0  # need to verify
@@ -625,21 +625,21 @@ tools:
           --rm \
           --user 1000:1000 \
           -v $(pwd):/data \
-          -v ${metadata_yaml}:/metadata.yaml:ro \  # should these file be mounted directly under root?
-          -v ${bam_file}:/$(basename ${bam_file}) \
-          -v ${bai_file}:/$(basename ${bai_file}) \
-          -v ${tar_file}:/$(basename {tar_file}) \
+          -v ${metadata_yaml}:/app/metadata.yaml:ro \
+          -v ${bam_file}:/app/$(basename ${bam_file}):ro \
+          -v ${bai_file}:/app/$(basename ${bai_file}):ro \
+          -v ${tar_file}:/app/$(basename ${tar_file}):ro \
           -v ${lane_bam_qc_dir}:/lane_unaligned \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
-          -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
+          -v ${task_aligned_bam_qc_outdir}:/task_aligned_bam_qc_outdir \
           ${util_dckr} python3 generate_song_payload.py \
-            /metadata.yaml \
-            /$bam_file \
-            /$bai_file \
-            /$tar_file \
+            metadata.yaml \
+            $(basename ${bam_file}) \
+            $(basename ${bai_file}) \
+            $(basename ${tar_file}) \
             /lane_unaligned \
             /task_aligned_bam_oxog_metrics_wkdir \
-            /task_aligned_bam_qc_outdir > /data/payload.json 2> std.err \
+            /task_aligned_bam_qc_outdir > payload.json 2> std.err \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
@@ -676,7 +676,7 @@ tools:
             --rm \
             --net=host \
             -e ACCESS_TOKEN \
-            -v ${payload}:/data/payload.json \
+            -v ${payload}:/data/payload.json:ro \
             ${docker_song} \
             uperation sing upload \
               --song-url ${song_metadata_url} \
@@ -784,7 +784,7 @@ tools:
         && docker run \
             --rm \
             --net=host \
-            -v ${manifest_file}:/manifest.txt \
+            -v ${manifest_file}:/manifest.txt:ro \
             -v ${input_dir}:/data \
             -e ACCESS_TOKEN \
             -e STORAGE_URL=${storage_url} \
