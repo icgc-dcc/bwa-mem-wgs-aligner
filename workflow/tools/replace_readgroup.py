@@ -4,7 +4,7 @@ import subprocess
 import sys
 import json
 import time
-import shutil
+import glob
 
 """
 Major steps:
@@ -78,8 +78,10 @@ if input_format == 'BAM':
             except Exception as e:
                 sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old+'.bam')))
 
-    # delete files at the very last moment
-    if os.path.isdir(unaligned_by_rg_dir): shutil.rmtree(unaligned_by_rg_dir)
+    # delete input bam files at the very last moment
+    if os.path.isdir(unaligned_by_rg_dir):
+        for f in glob.glob(os.path.join(unaligned_by_rg_dir, "*.bam")):
+            os.remove(f)
 
 elif input_format == 'FASTQ':
     pass

@@ -36,7 +36,7 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     dckr_pcawg2_song:
       type: string
-      default: quay.io/pancaner/song-uperations:1.0.0
+      default: quay.io/pancancer/song-uperations:1.0.0
     dckr_score:
       type: string
       default: overture/score:1.5.0  # need to verify
@@ -576,18 +576,20 @@ tools:
 
   create_tar:
     command: |
-      TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
+      TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tgz \
       && docker_pull ${dckr_pcawg2_song} \
       && docker run \
+          --user 1000:1000 \
+          --workdir / \
           -v ${output_dir}:/data \
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_unaligned_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${dckr_pcawg2_song} python3 create_tar.py \
+          ${dckr_pcawg2_song} tar czf \
             /data/$TAR_NAME \
-            /aligned_bam_qc:aligned_bam_qc:multiple_metrics.* \
-            /unaligned_seq_qc:unaligned_seq_qc:*.lane.bam.quality_yield_metrics.txt \
-            /oxog_metrics:oxog_metrics:oxoG_metrics.txt \
+            aligned_bam_qc/multiple_metrics.* \
+            unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt \
+            oxog_metrics/oxoG_metrics.txt \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:
