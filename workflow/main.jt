@@ -36,7 +36,7 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     dckr_pcawg2_song:
       type: string
-      default: quay.io/pancaner/song-uperations:1.0.0
+      default: quay.io/pancancer/song-uperations:1.0.0
     dckr_score:
       type: string
       default: overture/score:1.5.0  # need to verify
@@ -579,15 +579,17 @@ tools:
       TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tar.gz \
       && docker pull ${dckr_pcawg2_song} \
       && docker run \
+          --user 1000:1000 \
+          --workdir / \
           -v ${output_dir}:/data \
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_unaligned_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${dckr_pcawg2_song} python3 create_tar.py \
+          ${dckr_pcawg2_song} tar czf \
             /data/$TAR_NAME \
-            /aligned_bam_qc:aligned_bam_qc:multiple_metrics.* \
-            /unaligned_seq_qc:unaligned_seq_qc:*.lane.bam.quality_yield_metrics.txt \
-            /oxog_metrics:oxog_metrics:oxoG_metrics.txt \
+            aligned_bam_qc/multiple_metrics.* \
+            unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt \
+            oxog_metrics/oxoG_metrics.txt \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:
@@ -615,22 +617,23 @@ tools:
     command: |
       docker pull ${dckr_pcawg2_song} \
       && docker run \
-        -v $(pwd):/data \
-        -v ${metadata_yaml}:/metadata.yaml:ro \  # should these file be mounted directly under root?
-        -v ${bam_file}:/$(basename ${bam_file}) \
-        -v ${bai_file}:/$(basename ${bai_file}) \
-        -v ${tar_file}:/$(basename {tar_file}) \
-        -v ${lane_unaligned_dir}:/lane_unaligned \
-        -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
-        -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
-        ${dckr_pcawg2_song} python3 generate_song_payload.py \
-          /metadata.yaml \
-          /$bam_file \
-          /$bai_file \
-          /$tar_file \
-          /lane_unaligned \
-          /task_aligned_bam_oxog_metrics_wkdir \
-          /task_aligned_bam_qc_outdir | jq > payload.json \
+          --user 1000:1000 \
+          -v $(pwd):/data \
+          -v ${metadata_yaml}:/metadata.yaml:ro \  # should these file be mounted directly under root?
+          -v ${bam_file}:/$(basename ${bam_file}) \
+          -v ${bai_file}:/$(basename ${bai_file}) \
+          -v ${tar_file}:/$(basename {tar_file}) \
+          -v ${lane_unaligned_dir}:/lane_unaligned \
+          -v ${task_aligned_bam_oxog_metrics_wkdir}:/task_aligned_bam_oxog_metrics_wkdir \
+          -v ${task_aligned_bam_qc_wkdir}:/task_aligned_bam_qc_wkdir \
+          ${dckr_pcawg2_song} python3 generate_song_payload.py \
+            /metadata.yaml \
+            /$bam_file \
+            /$bai_file \
+            /$tar_file \
+            /lane_unaligned \
+            /task_aligned_bam_oxog_metrics_wkdir \
+            /task_aligned_bam_qc_outdir > /data/payload.json \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
