@@ -11,6 +11,7 @@ from overture_song_payload import SamplePayload
 from overture_song_payload import SongPayload
 import re, os
 import uuid
+import tarfile
 
 def main():
     """ Main program """
@@ -42,8 +43,8 @@ def main():
             library_strategy=get_experiment_library_strategy(yaml_data),
             paired_end=get_experiment_paired_end(open(os.path.join(results.multiple_metrics_dir, 'multiple_metrics.alignment_summary_metrics'),'r')),
             info={
-                'computedMedianInsertSize': float(insert_size_metrics.get('MEDIAN_INSERT_SIZE')),
-                'computedMeanInsertSize': float(insert_size_metrics.get('MEAN_INSERT_SIZE')),
+                'computedMedianInsertSize': int(float(insert_size_metrics.get('MEDIAN_INSERT_SIZE'))),
+                'computedMeanInsertSize': int(float(insert_size_metrics.get('MEAN_INSERT_SIZE'))),
                 'readGroups': get_experiment_read_groups(yaml_data, quality_yield_metrics_dir),
             }
         ),
@@ -69,14 +70,14 @@ def main():
                 }
             )
         ],
-        file_payloads=get_files(results.bam_file, results.bai_file, results.tar_file,results.lane_unaligned_dir,results.oxog_metrics_dir, results.multiple_metrics_dir)
+        file_payloads=get_files(results.bam_file, results.bai_file, results.tar_file)
     )
 
     print(song_payload.to_json())
 
     return 0
 
-def get_files(bam_file, bai_file, tar_file, lane_unaligned_dir, oxog_metrics_dir, multiple_metrics_dir):
+def get_files(bam_file, bai_file, tar_file):
     file_payloads = []
     for file in [bam_file,bai_file]:
         file_payloads.append(FilePayload(
@@ -100,17 +101,17 @@ def get_files(bam_file, bai_file, tar_file, lane_unaligned_dir, oxog_metrics_dir
             'tarContent': [
                 {
                     'path': 'unaligned_seq_qc',
-                    'files': os.listdir(lane_unaligned_dir),
+                    'files': filter_starts_with('unaligned_seq_qc',list_files_tar_gz(tarfile.open(tar_file,'r:gz'))),
                     'description': "Quality yield metrics from unaligned lane level sequences, reported by Picard tools"
                 },
                 {
                     'path': 'oxog_metrics',
-                    'files': os.listdir(oxog_metrics_dir),
+                    'files': filter_starts_with('oxog_metrics',list_files_tar_gz(tarfile.open(tar_file,'r:gz'))),
                     'description': "OxoG metrics reported by Picard tools"
                 },
                 {
                     'path': 'aligned_bam_qc',
-                    'files': os.listdir(multiple_metrics_dir),
+                    'files': filter_starts_with('aligned_bam_qc',list_files_tar_gz(tarfile.open(tar_file,'r:gz'))),
                     'description': 'Multiple metrics of aligned BAM reported by Picard tools'
                 }
             ]
@@ -119,6 +120,21 @@ def get_files(bam_file, bai_file, tar_file, lane_unaligned_dir, oxog_metrics_dir
     ))
 
     return file_payloads
+
+def list_files_tar_gz(fp_gz):
+    files = []
+    for member in fp_gz.getmembers():
+        f = fp_gz.extractfile(member)
+        if f is not None:
+            files.append(member.name)
+    return list(set(files))
+
+def filter_starts_with(prefix, needle):
+    result = []
+    for s in needle:
+        if str(s).startswith(prefix):
+            result.append(s)
+    return result
 
 def get_experiment_paired_end(metrics_fp):
     categories = retrieve_alignment_summary_metrics_pairs(metrics_fp)
@@ -153,8 +169,12 @@ def parse_insert_size_metrics(metrics_fp):
 
         if record:
             if not re.match(r'^\s*$', line):
-                lines.append(line.split('\t'))
-    return dict(zip(lines[0], lines[1]))
+                lines.append(line.strip('\n').split('\t'))
+    for i in range(1,len(lines)):
+        parsed_line = dict(zip(lines[0], lines[i]))
+        if parsed_line['LIBRARY'] == '' and parsed_line['READ_GROUP']=='' and parsed_line['SAMPLE']=='':
+            return parsed_line
+    raise Exception("The metrics cloud not be found.")
 
 def load_quality_yield_metrics(metrics_dir, read_group):
     metrics_file = os.path.join(metrics_dir,retrieve_metrics_file(metrics_dir,read_group))
