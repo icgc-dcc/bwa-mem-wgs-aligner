@@ -13,7 +13,6 @@ VOLUME ["/app"]
 COPY . /app
 WORKDIR /app
 
-RUN pip3 install -e git+https://github.com/baminou/overture-song-payload.git@0.0.4#egg=overture_song_payload
-RUN pip3 install pyyaml>=4.2b1
+RUN pip3 install -r requirements.txt
 
 ENV PATH="/app:${PATH}"
