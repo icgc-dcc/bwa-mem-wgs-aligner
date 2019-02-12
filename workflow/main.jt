@@ -190,6 +190,7 @@ workflow:
         payload: payload@generate_song_payload
         song_metadata_url: song_collab_url
         study: study@validate_metadata
+        docker_song: docker_song
 
     upload_song_payload_aws:
       tool: upload_song_payload
@@ -198,6 +199,7 @@ workflow:
         payload: payload@generate_song_payload
         song_metadata_url: song_aws_url
         study: study@validate_metadata
+        docker_song: docker_song
 
     save_song_payload_collab:
       tool: save_song_payload
@@ -206,6 +208,7 @@ workflow:
         song_metadata_url: song_collab_url
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_collab
+        docker_song: docker_song
 
     save_song_payload_aws:
       tool: save_song_payload
@@ -214,6 +217,8 @@ workflow:
         song_metadata_url: song_aws_url
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_aws
+        docker_song: docker_song
+
 
     create_manifest_file_collab:
       tool: create_manifest_file
@@ -223,6 +228,7 @@ workflow:
         song_metadata_url: song_collab_url
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_collab
+        docker_song: docker_song
 
     create_manifest_file_aws:
       tool: create_manifest_file
@@ -232,6 +238,7 @@ workflow:
         song_metadata_url: song_aws_url
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_aws
+        docker_song: docker_song
 
     score_upload_collab:
       tool: score_upload
@@ -258,6 +265,7 @@ workflow:
         song_metadata_url: song_collab_url
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_collab
+        docker_song: docker_song
 
     publish_song_payload_aws:
       tool: publish_song_payload
@@ -266,6 +274,7 @@ workflow:
         song_metadata_url: song_aws_url
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_aws
+        docker_song: docker_song
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable

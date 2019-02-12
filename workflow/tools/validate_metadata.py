@@ -123,9 +123,9 @@ output.update({
         'aliquot_id': aliquot_id,
         'number_of_lanes': str(number_of_lanes),
         'study': study,
-        'aws_upload_allowed': aws_upload_allowed,
-        'cgc_upload_allowed': cgc_upload_allowed,
-        'collab_upload_allowed': True  # always true for collab
+        'aws_upload_allowed': str(aws_upload_allowed).lower(),
+        'cgc_upload_allowed': str(cgc_upload_allowed).lower(),
+        'collab_upload_allowed': str(True).lower()  # always true for collab
     })
 
 # write to the metadata json file
