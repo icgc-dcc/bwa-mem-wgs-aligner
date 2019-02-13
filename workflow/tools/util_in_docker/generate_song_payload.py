@@ -43,15 +43,17 @@ def main():
             library_strategy=get_experiment_library_strategy(yaml_data),
             paired_end=get_experiment_paired_end(open(os.path.join(results.multiple_metrics_dir, 'multiple_metrics.alignment_summary_metrics'),'r')),
             info={
-                'MEDIAN_INSERT_SIZE': int(float(insert_size_metrics.get('MEDIAN_INSERT_SIZE'))),
-                'MODE_INSERT_SIZE': int(float(insert_size_metrics.get('MODE_INSERT_SIZE'))),
-                'MEDIAN_ABSOLUTE_DEVIATION': int(float(insert_size_metrics.get('MEDIAN_ABSOLUTE_DEVIATION'))),
-                'MIN_INSERT_SIZE': int(float(insert_size_metrics.get('MIN_INSERT_SIZE'))),
-                'MAX_INSERT_SIZE': int(float(insert_size_metrics.get('MAX_INSERT_SIZE'))),
-                'STANDARD_DEVIATION': int(float(insert_size_metrics.get('STANDARD_DEVIATION'))),
-                'MEAN_INSERT_SIZE': int(float(insert_size_metrics.get('MEAN_INSERT_SIZE'))),
-                'READ_PAIRS': int(float(insert_size_metrics.get('READ_PAIRS'))),
-                'PAIR_ORIENTATION': str(insert_size_metrics.get('PAIR_ORIENTATION')),
+                'insertSizeStats': {
+                    'MEDIAN_INSERT_SIZE': int(float(insert_size_metrics.get('MEDIAN_INSERT_SIZE'))),
+                    'MODE_INSERT_SIZE': int(float(insert_size_metrics.get('MODE_INSERT_SIZE'))),
+                    'MEDIAN_ABSOLUTE_DEVIATION': int(float(insert_size_metrics.get('MEDIAN_ABSOLUTE_DEVIATION'))),
+                    'MIN_INSERT_SIZE': int(float(insert_size_metrics.get('MIN_INSERT_SIZE'))),
+                    'MAX_INSERT_SIZE': int(float(insert_size_metrics.get('MAX_INSERT_SIZE'))),
+                    'STANDARD_DEVIATION': int(float(insert_size_metrics.get('STANDARD_DEVIATION'))),
+                    'MEAN_INSERT_SIZE': int(float(insert_size_metrics.get('MEAN_INSERT_SIZE'))),
+                    'READ_PAIRS': int(float(insert_size_metrics.get('READ_PAIRS'))),
+                    'PAIR_ORIENTATION': str(insert_size_metrics.get('PAIR_ORIENTATION'))
+                },
                 'readGroups': get_experiment_read_groups(yaml_data, quality_yield_metrics_dir),
             }
         ),
