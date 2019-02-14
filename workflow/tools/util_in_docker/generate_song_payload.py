@@ -114,7 +114,7 @@ def get_files(bam_file, bai_file, tar_file):
         #TODO
         file_type=FilePayload.retrieve_file_type(tar_file),
         info={
-            'description':"The tar.gz file contains various QC metrics",
+            'description':"The tgz file contains various QC metrics",
             'tarContent': [
                 {
                     'path': 'unaligned_seq_qc',

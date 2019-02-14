@@ -20,12 +20,6 @@ workflow:
     song_aws_url:
       type: string
       default: "https://virginia.song.icgc.org"
-    storage_collab_url:
-      type: string
-      default: ""
-    storage_aws_url:
-      type: string
-      default: ""
     metadata_yaml:
       type: string
       is_file: true
@@ -233,7 +227,6 @@ workflow:
         manifest_file: manifest_file@create_manifest_file_collab
         input_dir: output_dir@pcawg_aligner
         song_metadata_url: song_collab_url
-        storage_url: storage_collab_url
 
     score_upload_aws:
       tool: score_upload
@@ -242,7 +235,6 @@ workflow:
         manifest_file: manifest_file@create_manifest_file_aws
         input_dir: output_dir@pcawg_aligner
         song_metadata_url: song_aws_url
-        storage_url: storage_aws_url
 
     publish_song_payload_collab:
       tool: publish_song_payload
@@ -687,7 +679,7 @@ tools:
       with open("${payload}", "r") as f:
         payload_str = f.read()
 
-      res = requests.post("%s/upload/%s" % (${song_metadata_url}, ${study}),
+      res = requests.post("%s/upload/%s" % ("${song_metadata_url}", "${study}"),
               data=payload_str,
               headers=headers)
 
@@ -695,7 +687,7 @@ tools:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
-        sys.exit("SONG upload failed: %s" % res.json().get("message", "No message."))
+        sys.exit("SONG upload failed: %s" % res.json().get("message", "No error message."))
       '
 
     input:
@@ -733,14 +725,14 @@ tools:
         "Accept": "application/json"
       }
 
-      res = requests.post("%s/upload/%s/save/%s" % (${song_metadata_url}, ${study}, ${upload_id}),
+      res = requests.post("%s/upload/%s/save/%s" % ("${song_metadata_url}", "${study}", "${upload_id}"),
               headers=headers)
 
       if res.status_code >= 200 and res.status_code < 300:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
-        sys.exit("SONG save failed: %s" % res.json().get("message", "No message."))
+        sys.exit("SONG save failed: %s" % res.json().get("message", "No error message."))
       '
 
     input:
@@ -771,7 +763,7 @@ tools:
           o.write(json.dumps({"_skipped": True, "manifest_file": ""}))
         sys.exit(0)
 
-      res = requests.get("%s/studies/%s/analysis/%s" % (${song_metadata_url}, ${study}, ${analysis_id}))
+      res = requests.get("%s/studies/%s/analysis/%s" % ("${song_metadata_url}", "${study}", "${analysis_id}"))
 
       if res.status_code == 200:
         song_metadata = res.json()
@@ -786,7 +778,7 @@ tools:
         with open("output.json", "w") as o:
           o.write(json.dumps({"manifest_file": manifest_file}))
       else:
-        sys.exit("Saved SONG analysis could not be found (should never happen): %s" % res.json().get("message", "No message."))
+        sys.exit("Saved SONG analysis could not be found (should never happen): %s" % res.json().get("message", "No error message."))
       '
 
     input:
@@ -852,14 +844,14 @@ tools:
       }
 
       res = requests.put("%s/studies/%s/analysis/publish/%s" % \
-                          (${song_metadata_url}, ${study}, ${analysis_id}), \
+                          ("${song_metadata_url}", "${study}", "${analysis_id}"), \
                           headers=headers)
 
       if res.status_code == 201:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
-        sys.exit("SONG publishing failed: %s" % res.json().get("message", "No message."))
+        sys.exit("SONG publishing failed: %s" % res.json().get("message", "No error message."))
       '
 
     input:
