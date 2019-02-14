@@ -814,7 +814,7 @@ tools:
           profile="aws"
         fi
 
-        echo score-client --profile $profile upload --manifest ${manifest_file}
+        score-client --profile $profile upload --manifest ${manifest_file}
 
         echo "{ \"_skipped\": false }" > output.json;
 
