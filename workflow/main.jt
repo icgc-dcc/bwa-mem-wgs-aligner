@@ -451,7 +451,7 @@ tools:
         "lane_bam_qc_dir": lane_bam_qc_dir
       }))
 
-      ' ${sep=',' lane_bams} > output.json  # don't capture stderr, let JT worker capture it
+      ' ${sep=',' lane_bams} > output.json
 
     input:
       picard_jar:
