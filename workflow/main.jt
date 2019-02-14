@@ -266,6 +266,8 @@ workflow:
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_collab
         docker_song: docker_song
+      depends_on:
+      - completed@score_upload_collab
 
     publish_song_payload_aws:
       tool: publish_song_payload
@@ -275,6 +277,8 @@ workflow:
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_aws
         docker_song: docker_song
+      depends_on:
+      - completed@score_upload_aws
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
@@ -447,7 +451,7 @@ tools:
         "lane_bam_qc_dir": lane_bam_qc_dir
       }))
 
-      ' ${sep=',' lane_bams} > output.json 2> std.err
+      ' ${sep=',' lane_bams} > output.json
 
     input:
       picard_jar:
@@ -550,7 +554,7 @@ tools:
         METRIC_ACCUMULATION_LEVEL="ALL_READS" \
         METRIC_ACCUMULATION_LEVEL="SAMPLE" \
         METRIC_ACCUMULATION_LEVEL="LIBRARY" \
-        METRIC_ACCUMULATION_LEVEL="READ_GROUP" 2> std.err \
+        METRIC_ACCUMULATION_LEVEL="READ_GROUP" \
       && echo "{ \"output_dir\": \"$(pwd)\" }" > output.json
     input:
       picard_jar:
@@ -576,7 +580,7 @@ tools:
       java -jar ${picard_jar} CollectOxoGMetrics \
         I=${aligned_bam} \
         O=oxoG_metrics.txt \
-        R=${reference_sequence} 2> std.err \
+        R=${reference_sequence} \
       && echo "{ \"output_dir\": \"$(pwd)\" }" > output.json
     input:
       picard_jar:
@@ -593,7 +597,7 @@ tools:
 
   create_tar:
     command: |
-      docker pull ${docker_song} 2> std.err \
+      docker pull ${docker_song} \
       && TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tgz \
       && docker run \
           --rm \
@@ -603,7 +607,7 @@ tools:
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_bam_qc_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${docker_song} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" 2> std.err \
+          ${docker_song} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:
@@ -629,7 +633,7 @@ tools:
 
   generate_song_payload:
     command: |
-      docker pull ${util_dckr} 2> std.err \
+      docker pull ${util_dckr} \
       && docker run \
           --rm \
           --user 1000:1000 \
@@ -648,7 +652,7 @@ tools:
             $(basename ${tar_file}) \
             /lane_unaligned \
             /task_aligned_bam_oxog_metrics_wkdir \
-            /task_aligned_bam_qc_outdir > payload.json 2> std.err \
+            /task_aligned_bam_qc_outdir > payload.json \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
@@ -679,8 +683,9 @@ tools:
 
   upload_song_payload:
     command: |
-      if [ "${is_allowed}" = true ]; then \
-        docker pull ${docker_song} 2> std.err \
+      sh -c '
+      if [ ${is_allowed} = true ]; then
+        docker pull ${docker_song} \
         && docker run \
             --rm \
             --net=host \
@@ -690,10 +695,11 @@ tools:
             uperation sing upload \
               --song-url ${song_metadata_url} \
               --study ${study} \
-              --payload /data/payload.json > output.json 2> std.err; \
-      else \
-        echo "{ \"_skipped\": true }" > output.json; \
+              --payload /data/payload.json > output.json;
+      else
+        echo "{ \"_skipped\": true, \"status\": \"\", \"uploadId\": \"\" }" > output.json;
       fi
+      '
 
     input:
       is_allowed:
@@ -715,8 +721,9 @@ tools:
 
   save_song_payload:
     command: |
-      if [ "${is_allowed}" = true ]; then \
-        docker pull ${docker_song} 2> std.err \
+      sh -c '
+      if [ ${is_allowed} = true ]; then
+        docker pull ${docker_song} \
         && docker run \
             --rm \
             --net=host \
@@ -725,10 +732,11 @@ tools:
             uperation sing save \
               --song-url ${song_metadata_url} \
               --study ${study} \
-              --upload-id ${upload_id} > output.json 2> std.err; \
-      else \
-        echo "{ \"_skipped\": true }" > output.json; \
+              --upload-id ${upload_id} > output.json;
+      else
+        echo "{ \"_skipped\": true, \"status\": \"\", \"analysis_id\": \"\" }" > output.json;
       fi
+      '
 
     input:
       is_allowed:
@@ -749,8 +757,9 @@ tools:
 
   create_manifest_file:
     command: |
-      if [ "${is_allowed}" = true ]; then \
-        docker pull ${docker_song} 2> std.err \
+      sh -c '
+      if [ ${is_allowed} = true ]; then
+        docker pull ${docker_song} \
         && docker run \
             --rm \
             --net=host \
@@ -762,11 +771,12 @@ tools:
               --study ${study} \
               --analysis ${analysis_id} \
               --files-dir ./ \
-              --manifest $(echo -n 'manifest.txt')} 2> std.err \
-        && echo "{ \"manifest_file\": \"$(pwd)/manifest.txt\" }" > output.json; \
-      else \
-        echo "{ \"_skipped\": true }" > output.json; \
+              --manifest manifest.txt \
+        && echo "{ \"manifest_file\": \"$(pwd)/manifest.txt\" }" > output.json;
+      else
+        echo "{ \"_skipped\": true, \"manifest_file\": \"\" }" > output.json;
       fi
+      '
 
     input:
       is_allowed:
@@ -788,8 +798,9 @@ tools:
 
   score_upload:
     command: |
-      if [ "${is_allowed}" = true ]; then \
-        docker pull ${dckr_score} 2> std.err \
+      sh -c '
+      if [ ${is_allowed} = true ]; then
+        docker pull ${dckr_score} \
         && docker run \
             --rm \
             --net=host \
@@ -800,10 +811,11 @@ tools:
             -e METADATA_URL=${song_metadata_url} \
             ${dckr_score} \
             bin/score-client upload \
-              --manifest /manifest.txt --force 2> std.err; \
-      else \
-        echo "{ \"_skipped\": true }" > output.json; \
+              --manifest /manifest.txt --force;
+      else
+        echo "{ \"_skipped\": true }" > output.json;
       fi
+      '
 
     input:
       is_allowed:
@@ -822,7 +834,8 @@ tools:
 
   publish_song_payload:
     command: |
-      if [ "${is_allowed}" = true ]; then \
+      sh -c '
+      if [ ${is_allowed} = true ]; then
         docker pull ${docker_song} \
         && docker run \
             --rm \
@@ -832,10 +845,11 @@ tools:
             uperation publish \
               --song-url ${song_metadata_url} \
               --study ${study} \
-              --analysis-id ${analysis_id} 2> std.err; \
-      else \
-        echo "{ \"_skipped\": true }" > output.json; \
+              --analysis-id ${analysis_id};
+      else
+        echo "{ \"_skipped\": true }" > output.json;
       fi
+      '
 
     input:
       is_allowed:

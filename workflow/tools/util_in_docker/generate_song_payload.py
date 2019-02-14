@@ -12,6 +12,8 @@ from overture_song_payload import SongPayload
 import re, os
 import uuid
 import tarfile
+import json
+
 
 def main():
     """ Main program """
@@ -74,17 +76,23 @@ def main():
                     info={}
                 ),
                 info={
-                    'aliquot_id': get_sample_info_aliquot_id(yaml_data),
-                    'matched_control_sample': get_sample_info_matched_control_sample(yaml_data),
+                    'aliquotId': get_sample_info_aliquot_id(yaml_data),
+                    'matchedControlSample': get_sample_info_matched_control_sample(yaml_data),
                 }
             )
         ],
         file_payloads=get_files(results.bam_file, results.bai_file, results.tar_file)
     )
 
-    print(song_payload.to_json())
+    payload = json.loads(song_payload.to_json())
+    payload.pop('analysisId')  # remove analysisId to avoid warning message from SONG server
+    for sample in payload['sample']:
+        sample['donor'].pop('studyId')  # shouldn't include studyId in donor
 
-    return 0
+    print(json.dumps(payload))
+
+    return 0  # why this is needed?
+
 
 def get_files(bam_file, bai_file, tar_file):
     file_payloads = []
@@ -273,6 +281,14 @@ def get_experiment_read_groups(yaml_data, quality_yield_metrics_dir):
     for read_group in yaml_data.get('readGroups'):
         metrics = load_quality_yield_metrics(quality_yield_metrics_dir,read_group.get('readGroupId'))
         read_groups.append({
+            'readGroupId': read_group['readGroupId'],  # required field
+            'sequencingCenter': read_group.get('sequencingCenter', ''),  # optional field
+            'sequencingPlatform': read_group['sequencingPlatform'],  # required field
+            'platformModel': read_group.get('platformModel', ''),  # optional field
+            'platformUnit': read_group['platformUnit'],  # required field
+            'libraryName': read_group['libraryName'],  # required field
+            'insertSize': read_group.get('insertSize', None), # optional field
+            'sequencingDate': read_group.get('sequencingDate', ''), # optional field
             'totalReads':int(metrics.get('TOTAL_READS')),
             'pfReads':int(metrics.get('PF_READS')),
             'readLength':int(metrics.get('READ_LENGTH')),
