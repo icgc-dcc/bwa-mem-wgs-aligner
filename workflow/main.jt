@@ -673,7 +673,7 @@ tools:
       import requests
       import json
 
-      if (${is_allowed} != "True"):
+      if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
           o.write(json.dumps({"_skipped": True, "status": "", "uploadId": ""}))
         sys.exit(0)
@@ -722,7 +722,7 @@ tools:
       import requests
       import json
 
-      if (${is_allowed} != "True"):
+      if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
           o.write(json.dumps({"_skipped": True, "status": "", "analysisId": ""}))
         sys.exit(0)
@@ -766,7 +766,7 @@ tools:
       import requests
       import json
 
-      if (${is_allowed} != "True"):
+      if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
           o.write(json.dumps({"_skipped": True, "manifest_file": ""}))
         sys.exit(0)
@@ -840,7 +840,7 @@ tools:
       import requests
       import json
 
-      if (${is_allowed} != "True"):
+      if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
           o.write(json.dumps({ "_skipped": True }))
         sys.exit(0)
