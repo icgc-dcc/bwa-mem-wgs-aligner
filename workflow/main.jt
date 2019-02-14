@@ -34,15 +34,9 @@ workflow:
       type: string
       is_file: true
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
-    docker_song:
-      type: string
-      default: quay.io/pancancer/song-uperations:1.0.0
     util_dckr:
       type: string
       default: quay.io/pancancer/util_dckr:0.0.3
-    dckr_score:
-      type: string
-      default: overture/score:1.5.0  # need to verify
     pcawg_aligner_dockstore_url:
       type: string
       is_file: true
@@ -162,7 +156,7 @@ workflow:
       input:
         aliquot_id: aliquot_id@validate_metadata
         number_of_lanes: number_of_lanes@validate_metadata
-        docker_song: docker_song
+        util_dckr: util_dckr
         output_dir: output_dir@pcawg_aligner
         task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
         lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
@@ -172,7 +166,6 @@ workflow:
     generate_song_payload:
       tool: generate_song_payload
       input:
-        docker_song: docker_song
         util_dckr: util_dckr
         metadata_yaml: metadata_yaml
         bam_file: merged_output_bam@pcawg_aligner
@@ -190,7 +183,6 @@ workflow:
         payload: payload@generate_song_payload
         song_metadata_url: song_collab_url
         study: study@validate_metadata
-        docker_song: docker_song
 
     upload_song_payload_aws:
       tool: upload_song_payload
@@ -199,7 +191,6 @@ workflow:
         payload: payload@generate_song_payload
         song_metadata_url: song_aws_url
         study: study@validate_metadata
-        docker_song: docker_song
 
     save_song_payload_collab:
       tool: save_song_payload
@@ -208,7 +199,6 @@ workflow:
         song_metadata_url: song_collab_url
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_collab
-        docker_song: docker_song
 
     save_song_payload_aws:
       tool: save_song_payload
@@ -217,8 +207,6 @@ workflow:
         song_metadata_url: song_aws_url
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_aws
-        docker_song: docker_song
-
 
     create_manifest_file_collab:
       tool: create_manifest_file
@@ -227,8 +215,7 @@ workflow:
         input_dir: output_dir@pcawg_aligner
         song_metadata_url: song_collab_url
         study: study@validate_metadata
-        analysis_id: analysis_id@save_song_payload_collab
-        docker_song: docker_song
+        analysis_id: analysisId@save_song_payload_collab
 
     create_manifest_file_aws:
       tool: create_manifest_file
@@ -237,8 +224,7 @@ workflow:
         input_dir: output_dir@pcawg_aligner
         song_metadata_url: song_aws_url
         study: study@validate_metadata
-        analysis_id: analysis_id@save_song_payload_aws
-        docker_song: docker_song
+        analysis_id: analysisId@save_song_payload_aws
 
     score_upload_collab:
       tool: score_upload
@@ -265,7 +251,6 @@ workflow:
         song_metadata_url: song_collab_url
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_collab
-        docker_song: docker_song
       depends_on:
       - completed@score_upload_collab
 
@@ -276,7 +261,6 @@ workflow:
         song_metadata_url: song_aws_url
         study: study@validate_metadata
         analysis_id: analysis_id@save_song_payload_aws
-        docker_song: docker_song
       depends_on:
       - completed@score_upload_aws
 
@@ -597,7 +581,7 @@ tools:
 
   create_tar:
     command: |
-      docker pull ${docker_song} \
+      docker pull ${util_dckr} \
       && TAR_NAME=${aliquot_id}.${number_of_lanes}.$(date +%Y%m%d).wgs.qc_metrics.tgz \
       && docker run \
           --rm \
@@ -607,7 +591,7 @@ tools:
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_bam_qc_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${docker_song} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" \
+          ${util_dckr} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:
@@ -615,7 +599,7 @@ tools:
         type: string
       number_of_lanes:
         type: integer
-      docker_song:
+      util_dckr:
         type: string
       output_dir:
         type: string
@@ -683,22 +667,35 @@ tools:
 
   upload_song_payload:
     command: |
-      sh -c '
-      if [ ${is_allowed} = true ]; then
-        docker pull ${docker_song} \
-        && docker run \
-            --rm \
-            --net=host \
-            -e ACCESS_TOKEN \
-            -v ${payload}:/data/payload.json:ro \
-            ${docker_song} \
-            uperation sing upload \
-              --song-url ${song_metadata_url} \
-              --study ${study} \
-              --payload /data/payload.json > output.json;
-      else
-        echo "{ \"_skipped\": true, \"status\": \"\", \"uploadId\": \"\" }" > output.json;
-      fi
+      python -c '
+      import os
+      import sys
+      import requests
+      import json
+
+      if ("${is_allowed}" != "True"):
+        with open("output.json", "w") as o:
+          o.write(json.dumps({"_skipped": True, "status": "", "uploadId": ""}))
+        sys.exit(0)
+
+      headers = {
+        "Authorization": "Bearer %s" % os.environ["ACCESSTOKEN"],
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+
+      with open("${payload}", "r") as f:
+        payload_str = f.read()
+
+      res = requests.post("%s/upload/%s" % (${song_metadata_url}, ${study}),
+              data=payload_str,
+              headers=headers)
+
+      if res.status_code == 200:
+        with open("output.json", "w") as o:
+          o.write(json.dumps(res.json()))
+      else:
+        sys.exit("SONG upload failed: %s" % res.json().get("message", "No message."))
       '
 
     input:
@@ -711,8 +708,6 @@ tools:
         type: string
       study:
         type: string
-      docker_song:
-        type: string
     output:
       status:
         type: string
@@ -721,28 +716,36 @@ tools:
 
   save_song_payload:
     command: |
-      sh -c '
-      if [ ${is_allowed} = true ]; then
-        docker pull ${docker_song} \
-        && docker run \
-            --rm \
-            --net=host \
-            -e ACCESS_TOKEN \
-            ${docker_song} \
-            uperation sing save \
-              --song-url ${song_metadata_url} \
-              --study ${study} \
-              --upload-id ${upload_id} > output.json;
-      else
-        echo "{ \"_skipped\": true, \"status\": \"\", \"analysis_id\": \"\" }" > output.json;
-      fi
+      python -c '
+      import os
+      import sys
+      import requests
+      import json
+
+      if ("${is_allowed}" != "True"):
+        with open("output.json", "w") as o:
+          o.write(json.dumps({"_skipped": True, "status": "", "analysisId": ""}))
+        sys.exit(0)
+
+      headers = {
+        "Authorization": "Bearer %s" % os.environ["ACCESSTOKEN"],
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+
+      res = requests.post("%s/upload/%s/save/%s" % (${song_metadata_url}, ${study}, ${upload_id}),
+              headers=headers)
+
+      if res.status_code >= 200 and res.status_code < 300:
+        with open("output.json", "w") as o:
+          o.write(json.dumps(res.json()))
+      else:
+        sys.exit("SONG save failed: %s" % res.json().get("message", "No message."))
       '
 
     input:
       is_allowed:
         type: tring
-      docker_song:
-        type: string
       song_metadata_url:
         type: string
       study:
@@ -752,37 +755,43 @@ tools:
     output:
       status:
         type: string
-      analysis_id:
+      analysisId:
         type: string
 
   create_manifest_file:
     command: |
-      sh -c '
-      if [ ${is_allowed} = true ]; then
-        docker pull ${docker_song} \
-        && docker run \
-            --rm \
-            --net=host \
-            -v $(pwd):/output \
-            -v ${input_dir}:/data \
-            ${docker_song} \
-            uperation sing manifest \
-              --song-url ${song_metadata_url} \
-              --study ${study} \
-              --analysis ${analysis_id} \
-              --files-dir ./ \
-              --manifest manifest.txt \
-        && echo "{ \"manifest_file\": \"$(pwd)/manifest.txt\" }" > output.json;
-      else
-        echo "{ \"_skipped\": true, \"manifest_file\": \"\" }" > output.json;
-      fi
+      python -c '
+      import os
+      import sys
+      import requests
+      import json
+
+      if ("${is_allowed}" != "True"):
+        with open("output.json", "w") as o:
+          o.write(json.dumps({"_skipped": True, "manifest_file": ""}))
+        sys.exit(0)
+
+      res = requests.get("%s/studies/%s/analysis/%s" % (${song_metadata_url}, ${study}, ${analysis_id}))
+
+      if res.status_code == 200:
+        song_metadata = res.json()
+        manifest_file = os.path.join(os.getcwd(), "manifest.txt")
+        with open(manifest_file, "w") as m:
+          m.write("%s\t\t\n" % song_metadata["analysisId"])
+          for f in song_metadata["file"]:
+            m.write("%s\t%s\t%s\n" % (f["objectId"],
+                                      os.path.join(os.getcwd(), "..", "task.pcawg_aligner", f["fileName"]),
+                                      f["fileMd5sum"]))
+
+        with open("output.json", "w") as o:
+          o.write(json.dumps({"manifest_file": manifest_file}))
+      else:
+        sys.exit("Saved SONG analysis could not be found (should never happen): %s" % res.json().get("message", "No message."))
       '
 
     input:
       is_allowed:
         type: tring
-      docker_song:  # Docker image
-        type: string
       input_dir:
         type: string
       song_metadata_url:
@@ -798,20 +807,17 @@ tools:
 
   score_upload:
     command: |
-      sh -c '
-      if [ ${is_allowed} = true ]; then
-        docker pull ${dckr_score} \
-        && docker run \
-            --rm \
-            --net=host \
-            -v ${manifest_file}:/manifest.txt:ro \
-            -v ${input_dir}:/data \
-            -e ACCESS_TOKEN \
-            -e STORAGE_URL=${storage_url} \
-            -e METADATA_URL=${song_metadata_url} \
-            ${dckr_score} \
-            bin/score-client upload \
-              --manifest /manifest.txt --force;
+      bash -c '
+      if [ ${is_allowed} = True ]; then
+        profile="collab"
+        if [[ ${song_metadata_url} == *"virginia"* ]]; then
+          profile="aws"
+        fi
+
+        score-client --profile $profile upload --manifest ${manifest_file}
+
+        echo "{ \"_skipped\": false }" > output.json;
+
       else
         echo "{ \"_skipped\": true }" > output.json;
       fi
@@ -820,42 +826,45 @@ tools:
     input:
       is_allowed:
         type: tring
-      dckr_score:
-        type: string
       manifest_file:
         type: string
         is_file: true
-      input_dir:
-        type: string
       song_metadata_url:
-        type: string
-      storage_url:
         type: string
 
   publish_song_payload:
     command: |
-      sh -c '
-      if [ ${is_allowed} = true ]; then
-        docker pull ${docker_song} \
-        && docker run \
-            --rm \
-            --net=host \
-            -e ACCESS_TOKEN \
-            ${docker_song} \
-            uperation publish \
-              --song-url ${song_metadata_url} \
-              --study ${study} \
-              --analysis-id ${analysis_id};
-      else
-        echo "{ \"_skipped\": true }" > output.json;
-      fi
+      python -c '
+      import os
+      import sys
+      import requests
+      import json
+
+      if ("${is_allowed}" != "True"):
+        with open("output.json", "w") as o:
+          o.write(json.dumps({ "_skipped": True }))
+        sys.exit(0)
+
+      headers = {
+        "Authorization": "Bearer %s" % os.environ["ACCESSTOKEN"],
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+
+      res = requests.put("%s/studies/%s/analysis/publish/%s" % \
+                          (${song_metadata_url}, ${study}, ${analysis_id}), \
+                          headers=headers)
+
+      if res.status_code == 201:
+        with open("output.json", "w") as o:
+          o.write(json.dumps(res.json()))
+      else:
+        sys.exit("SONG publishing failed: %s" % res.json().get("message", "No message."))
       '
 
     input:
       is_allowed:
         type: tring
-      docker_song:  # Docker image
-        type: string
       song_metadata_url:
         type: string
       study:

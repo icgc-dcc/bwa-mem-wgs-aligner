@@ -118,21 +118,20 @@ def get_files(bam_file, bai_file, tar_file):
             'tarContent': [
                 {
                     'path': 'unaligned_seq_qc',
-                    'files': filter_starts_with('unaligned_seq_qc',list_files_tar_gz(tarfile.open(tar_file,'r:gz'))),
+                    'files': [os.path.basename(f) for f in filter_starts_with('unaligned_seq_qc',list_files_tar_gz(tarfile.open(tar_file,'r:gz')))],
                     'description': "Quality yield metrics from unaligned lane level sequences, reported by Picard tools"
                 },
                 {
                     'path': 'oxog_metrics',
-                    'files': filter_starts_with('oxog_metrics',list_files_tar_gz(tarfile.open(tar_file,'r:gz'))),
+                    'files': [os.path.basename(f) for f in filter_starts_with('oxog_metrics',list_files_tar_gz(tarfile.open(tar_file,'r:gz')))],
                     'description': "OxoG metrics reported by Picard tools"
                 },
                 {
                     'path': 'aligned_bam_qc',
-                    'files': filter_starts_with('aligned_bam_qc',list_files_tar_gz(tarfile.open(tar_file,'r:gz'))),
+                    'files': [os.path.basename(f) for f in filter_starts_with('aligned_bam_qc',list_files_tar_gz(tarfile.open(tar_file,'r:gz')))],
                     'description': 'Multiple metrics of aligned BAM reported by Picard tools'
                 }
             ]
-
         }
     ))
 
