@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.39"
+  version: "0.0.40"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -848,8 +848,9 @@ tools:
                           headers=headers)
 
       if res.status_code >= 200 and res.status_code < 300:
+        print("Publishing succeeded for ${analysis_id}: %s" % res)
         with open("output.json", "w") as o:
-          o.write(json.dumps(res.json()))
+          o.write(json.dumps({ "_skipped": False, "status": "ok" }))
       else:
         sys.exit("SONG publishing failed: %s" % res)
       '
