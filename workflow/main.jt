@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.38"
+  version: "0.0.39"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -847,7 +847,7 @@ tools:
                           ("${song_metadata_url}", "${study}", "${analysis_id}"), \
                           headers=headers)
 
-      if res.status_code >= 200 and res.status_code < 300::
+      if res.status_code >= 200 and res.status_code < 300:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
