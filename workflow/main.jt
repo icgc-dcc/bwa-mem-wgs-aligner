@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.35"
+  version: "0.0.36"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -687,7 +687,7 @@ tools:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
-        sys.exit("SONG upload failed: %s" % res.json().get("message", "No error message."))
+        sys.exit("SONG upload failed: %s" % res)
       '
 
     input:
@@ -732,7 +732,7 @@ tools:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
-        sys.exit("SONG save failed: %s" % res.json().get("message", "No error message."))
+        sys.exit("SONG save failed: %s" % res)
       '
 
     input:
@@ -778,7 +778,7 @@ tools:
         with open("output.json", "w") as o:
           o.write(json.dumps({"manifest_file": manifest_file}))
       else:
-        sys.exit("Saved SONG analysis could not be found (should never happen): %s" % res.json().get("message", "No error message."))
+        sys.exit("Saved SONG analysis could not be found (should never happen): %s" % res)
       '
 
     input:
@@ -851,7 +851,7 @@ tools:
         with open("output.json", "w") as o:
           o.write(json.dumps(res.json()))
       else:
-        sys.exit("SONG publishing failed: %s" % res.json().get("message", "No error message."))
+        sys.exit("SONG publishing failed: %s" % res)
       '
 
     input:
