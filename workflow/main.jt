@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.36"
+  version: "0.0.37"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -242,7 +242,7 @@ workflow:
         is_allowed: collab_upload_allowed@validate_metadata
         song_metadata_url: song_collab_url
         study: study@validate_metadata
-        analysis_id: analysis_id@save_song_payload_collab
+        analysis_id: analysisId@save_song_payload_collab
       depends_on:
       - completed@score_upload_collab
 
@@ -252,7 +252,7 @@ workflow:
         is_allowed: aws_upload_allowed@validate_metadata
         song_metadata_url: song_aws_url
         study: study@validate_metadata
-        analysis_id: analysis_id@save_song_payload_aws
+        analysis_id: analysisId@save_song_payload_aws
       depends_on:
       - completed@score_upload_aws
 
