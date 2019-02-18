@@ -53,7 +53,8 @@ if input_format == 'BAM':
         for rg in _file.get('readGroups'):
             try:
                 subprocess.run(['java', '-jar', picard,
-                                'AddCommentsToBam', 'I=%s' % os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'),
+                                'AddCommentsToBam',
+                                'I=%s' % os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'),
                                 'O=%s' % os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam')] + rg_args, check=True)
             except Exception as e:
                 sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))

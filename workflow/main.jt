@@ -800,6 +800,7 @@ tools:
   score_upload:
     command: |
       bash -c '
+      -e
       if [ ${is_allowed} = True ]; then
         profile="collab"
         if [[ ${song_metadata_url} == *"virginia"* ]]; then
