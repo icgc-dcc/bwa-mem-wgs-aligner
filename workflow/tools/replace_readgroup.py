@@ -73,8 +73,11 @@ if input_format == 'BAM':
 
             try:
                 subprocess.run(['java', '-jar', picard,
-                                'AddOrReplaceReadGroups', 'I=%s' % os.path.join(unaligned_by_rg_dir, rg_old+'.bam'),
-                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.new.bam')] + rg_args, check=True)
+                                'AddOrReplaceReadGroups',
+                                'VALIDATION_STRINGENCY=LENIENT',
+                                'I=%s' % os.path.join(unaligned_by_rg_dir, rg_old+'.bam'),
+                                'O=%s' % os.path.join(output_dir, rg_new.get('ID')+'.new.bam')] + \
+                                rg_args, check=True)
             except Exception as e:
                 sys.exit('\n%s: ReplaceReadGroups failed: %s' % (e, os.path.join(unaligned_by_rg_dir, rg_old+'.bam')))
 

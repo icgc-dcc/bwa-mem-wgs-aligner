@@ -288,11 +288,11 @@ def get_experiment_read_groups(yaml_data, quality_yield_metrics_dir):
             'libraryName': read_group['libraryName'],  # required field
             'insertSize': read_group.get('insertSize', None), # optional field
             'sequencingDate': read_group.get('sequencingDate', ''), # optional field
-            'totalReads':int(metrics.get('TOTAL_READS')),
-            'pfReads':int(metrics.get('PF_READS')),
-            'readLength':int(metrics.get('READ_LENGTH')),
-            'totalBases':int(metrics.get('TOTAL_BASES')),
-            'pfBases':int(metrics.get('PF_BASES'))
+            'TOTAL_READS':int(metrics.get('TOTAL_READS')),
+            'PF_READS':int(metrics.get('PF_READS')),
+            'READ_LENGTH':int(metrics.get('READ_LENGTH')),
+            'TOTAL_BASES':int(metrics.get('TOTAL_BASES')),
+            'PF_BASES':int(metrics.get('PF_BASES'))
         })
     return read_groups
 
