@@ -41,7 +41,7 @@ if input_format == 'BAM':
             if bam_dict.get('path') == file_path and bam_dict.get('name') == file_name:
                 file_with_path = bam_dict.get('local_path')
                 break
-            sys.exit('Error: can not find the input BAM file specified in metadata YAML: %s, %s' % file_path)
+            sys.exit('Error: can not find the input BAM file specified in metadata YAML: %s, %s' % (file_name, file_path))
 
         # check whether the download files exist
         if not os.path.isfile(file_with_path): sys.exit('\n The downloaded file: %s do not exist!' % file_with_path)
