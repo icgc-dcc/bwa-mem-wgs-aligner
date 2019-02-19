@@ -34,7 +34,7 @@ workflow:
     pcawg_aligner_dockstore_url:
       type: string
       is_file: true
-      default: "[pcawg-bwa-mem.cwl]https://github.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/blob/2.6.8_1.4/Dockstore.cwl"  # commit hash: 8d259bc2d616a7af5266e870ef8da071337eee21
+      default: "[pcawg-bwa-mem.cwl]https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/2.6.8_1.4/Dockstore.cwl"  # commit hash: 8d259bc2d616a7af5266e870ef8da071337eee21
       # default: "[pcawg-bwa-mem.cwl]https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.8_1.4/plain-CWL/descriptor/Dockstore.cwl"
     reference_gz_amb:
       type: string
