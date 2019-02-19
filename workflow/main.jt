@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.0.41"
+  version: "0.0.42"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -34,7 +34,8 @@ workflow:
     pcawg_aligner_dockstore_url:
       type: string
       is_file: true
-      default: "[pcawg-bwa-mem.cwl]https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.8_1.4/plain-CWL/descriptor/Dockstore.cwl"
+      default: "[pcawg-bwa-mem.cwl]https://github.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/blob/2.6.8_1.4/Dockstore.cwl"  # commit hash: 8d259bc2d616a7af5266e870ef8da071337eee21
+      # default: "[pcawg-bwa-mem.cwl]https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.8_1.4/plain-CWL/descriptor/Dockstore.cwl"
     reference_gz_amb:
       type: string
       is_file: true
@@ -800,7 +801,7 @@ tools:
   score_upload:
     command: |
       bash -c '
-      -e
+      set -e
       if [ ${is_allowed} = True ]; then
         profile="collab"
         if [[ ${song_metadata_url} == *"virginia"* ]]; then
