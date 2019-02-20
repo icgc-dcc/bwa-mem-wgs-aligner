@@ -179,13 +179,13 @@ workflow:
         song_metadata_url: song_collab_url
         study: study@validate_metadata
 
-    upload_song_payload_aws:
-      tool: upload_song_payload
-      input:
-        is_allowed: aws_upload_allowed@validate_metadata
-        payload: payload@generate_song_payload
-        song_metadata_url: song_aws_url
-        study: study@validate_metadata
+    #upload_song_payload_aws:
+    #  tool: upload_song_payload
+    #  input:
+    #    is_allowed: aws_upload_allowed@validate_metadata
+    #    payload: payload@generate_song_payload
+    #    song_metadata_url: song_aws_url
+    #    study: study@validate_metadata
 
     save_song_payload_collab:
       tool: save_song_payload
@@ -195,13 +195,13 @@ workflow:
         study: study@validate_metadata
         upload_id: uploadId@upload_song_payload_collab
 
-    save_song_payload_aws:
-      tool: save_song_payload
-      input:
-        is_allowed: aws_upload_allowed@validate_metadata
-        song_metadata_url: song_aws_url
-        study: study@validate_metadata
-        upload_id: uploadId@upload_song_payload_aws
+    #save_song_payload_aws:
+    #  tool: save_song_payload
+    #  input:
+    #    is_allowed: aws_upload_allowed@validate_metadata
+    #    song_metadata_url: song_aws_url
+    #    study: study@validate_metadata
+    #    upload_id: uploadId@upload_song_payload_aws
 
     create_manifest_file_collab:
       tool: create_manifest_file
@@ -212,14 +212,14 @@ workflow:
         study: study@validate_metadata
         analysis_id: analysisId@save_song_payload_collab
 
-    create_manifest_file_aws:
-      tool: create_manifest_file
-      input:
-        is_allowed: aws_upload_allowed@validate_metadata
-        input_dir: output_dir@pcawg_aligner
-        song_metadata_url: song_aws_url
-        study: study@validate_metadata
-        analysis_id: analysisId@save_song_payload_aws
+    #create_manifest_file_aws:
+    #  tool: create_manifest_file
+    #  input:
+    #    is_allowed: aws_upload_allowed@validate_metadata
+    #    input_dir: output_dir@pcawg_aligner
+    #    song_metadata_url: song_aws_url
+    #    study: study@validate_metadata
+    #    analysis_id: analysisId@save_song_payload_aws
 
     score_upload_collab:
       tool: score_upload
@@ -229,13 +229,13 @@ workflow:
         input_dir: output_dir@pcawg_aligner
         song_metadata_url: song_collab_url
 
-    score_upload_aws:
-      tool: score_upload
-      input:
-        is_allowed: aws_upload_allowed@validate_metadata
-        manifest_file: manifest_file@create_manifest_file_aws
-        input_dir: output_dir@pcawg_aligner
-        song_metadata_url: song_aws_url
+    #score_upload_aws:
+    #  tool: score_upload
+    #  input:
+    #    is_allowed: aws_upload_allowed@validate_metadata
+    #    manifest_file: manifest_file@create_manifest_file_aws
+    #    input_dir: output_dir@pcawg_aligner
+    #    song_metadata_url: song_aws_url
 
     publish_song_payload_collab:
       tool: publish_song_payload
@@ -247,15 +247,15 @@ workflow:
       depends_on:
       - completed@score_upload_collab
 
-    publish_song_payload_aws:
-      tool: publish_song_payload
-      input:
-        is_allowed: aws_upload_allowed@validate_metadata
-        song_metadata_url: song_aws_url
-        study: study@validate_metadata
-        analysis_id: analysisId@save_song_payload_aws
-      depends_on:
-      - completed@score_upload_aws
+    #publish_song_payload_aws:
+    #  tool: publish_song_payload
+    #  input:
+    #    is_allowed: aws_upload_allowed@validate_metadata
+    #    song_metadata_url: song_aws_url
+    #    study: study@validate_metadata
+    #    analysis_id: analysisId@save_song_payload_aws
+    #  depends_on:
+    #  - completed@score_upload_aws
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
