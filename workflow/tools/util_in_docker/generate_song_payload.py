@@ -27,7 +27,7 @@ def main():
     parser.add_argument('multiple_metrics_dir')
     parser.add_argument('--wf-name', dest="wf_name", required=True)
     parser.add_argument('--wf-version', dest="wf_version", required=True)
-    parser.add_argument('--wf-execution-runner-name',dest="wf_exec_runner_name", required=True)
+    parser.add_argument('--wf-execution-runner-name',dest="wf_exec_runner_name", default="JTracker")
     parser.add_argument('--wf-execution-runner-version', dest="wf_exec_runner_ver", required=True)
     parser.add_argument('--wf-execution-job_id', dest="wf_exec_job", required=True)
     results = parser.parse_args()
@@ -235,29 +235,22 @@ def get_workflow_data_files(yaml_data):
     filename_keys = []
     for read_group in yaml_data.get('readGroups'):
         for file in read_group.get('files'):
-            if "song://" in file.get('fileName'):
-                repository = "collaboratory"
-            elif "file://" in file.get('fileName'):
+            if "file://" in file.get('path'):
                 repository = "local"
-            else:
-                repository = None
-
-            if repository == "collaboratory":
-                bundle_id = str(file.get('fileName')).split('/')[3]
-                object_id = str(file.get('fileName')).split('/')[4]
-            else:
                 bundle_id = None
                 object_id = None
+            else:
+                _, _, repository, bundle_id, object_id = str(file.get('path')).split('/')
 
-            if not os.path.basename(file.get('fileName')) in filename_keys:
+            if not file.get('fileName') in filename_keys:
                 files.append({
                     'repository': repository,
                     'bundle_id': bundle_id,
                     'object_id': object_id,
                     'file_name': os.path.basename(file.get('fileName'))
                 })
-                filename_keys.append(os.path.basename(file.get('fileName')))
-    return  files
+                filename_keys.append(file.get('fileName'))
+    return files
 
 def get_study(yaml_data):
     return yaml_data.get('study')
