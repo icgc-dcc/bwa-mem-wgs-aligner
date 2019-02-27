@@ -232,7 +232,7 @@ def get_workflow_data(wf_name, wf_version, execution_runner_name, execution_runn
 
 def get_workflow_data_files(yaml_data):
     files = []
-    filename_keys = []
+    filepath_keys = []
     for read_group in yaml_data.get('readGroups'):
         for file in read_group.get('files'):
             if "file://" in file.get('path'):
@@ -242,14 +242,14 @@ def get_workflow_data_files(yaml_data):
             else:
                 _, _, repository, bundle_id, object_id = str(file.get('path')).split('/')
 
-            if not file.get('fileName') in filename_keys:
+            if not file.get('path') in filepath_keys:
                 files.append({
                     'repository': repository,
                     'bundle_id': bundle_id,
                     'object_id': object_id,
                     'file_name': os.path.basename(file.get('fileName'))
                 })
-                filename_keys.append(file.get('fileName'))
+                filepath_keys.append(file.get('path'))
     return files
 
 def get_study(yaml_data):

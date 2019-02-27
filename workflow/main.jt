@@ -633,8 +633,7 @@ tools:
             --wf-name ${_wf_name} \
             --wf-version ${_wf_version} \
             --wf-execution-runner-version ${_jt_exec_version} \
-            --wf-execution-job_id ${_job_id} \
-            > payload.json \
+            --wf-execution-job_id ${_job_id} > payload.json \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:
