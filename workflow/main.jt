@@ -629,7 +629,11 @@ tools:
             $(basename ${tar_file}) \
             /lane_unaligned \
             /task_aligned_bam_oxog_metrics_wkdir \
-            /task_aligned_bam_qc_outdir > payload.json \
+            /task_aligned_bam_qc_outdir \
+            --wf-name ${_wf_name} \
+            --wf-version ${_wf_version} \
+            --wf-execution-runner-version ${_jt_exec_version} \
+            --wf-execution-job_id ${_job_id} > payload.json \
       && echo "{ \"payload\": \"$(pwd)/payload.json\" }" > output.json
 
     input:

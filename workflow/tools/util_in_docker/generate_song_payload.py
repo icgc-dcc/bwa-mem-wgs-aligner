@@ -25,6 +25,11 @@ def main():
     parser.add_argument('lane_unaligned_dir')
     parser.add_argument('oxog_metrics_dir')
     parser.add_argument('multiple_metrics_dir')
+    parser.add_argument('--wf-name', dest="wf_name", required=True)
+    parser.add_argument('--wf-version', dest="wf_version", required=True)
+    parser.add_argument('--wf-execution-runner-name',dest="wf_exec_runner_name", default="JTracker")
+    parser.add_argument('--wf-execution-runner-version', dest="wf_exec_runner_ver", required=True)
+    parser.add_argument('--wf-execution-job_id', dest="wf_exec_job", required=True)
     results = parser.parse_args()
 
     with open(os.path.join(results.multiple_metrics_dir,'multiple_metrics.insert_size_metrics'),'r') as fp:
@@ -37,7 +42,8 @@ def main():
         analysis_type=get_analysis_type(yaml_data),
         info={
             'isPcawg': get_analysis_info_ispcawg(),
-            'dataset': get_analysis_info_dataset()
+            'dataset': get_analysis_info_dataset(),
+            'workflow': get_workflow_data(results.wf_name,results.wf_version,results.wf_exec_runner_name,results.wf_exec_runner_ver,results.wf_exec_job,yaml_data)
         },
         experiment_payload=ExperimentPayload(
             aligned=get_experiment_aligned(yaml_data),
@@ -211,6 +217,40 @@ def retrieve_metrics_file(metrics_directory, read_group):
         if file.startswith(read_group) and file.endswith('.lane.bam.quality_yield_metrics.txt'):
             return file
     raise Exception("The metrics file %s does not exist." % (file_full_path))
+
+def get_workflow_data(wf_name, wf_version, execution_runner_name, execution_runner_version, execution_job_id,yaml_data):
+    return {
+        'name': wf_name,
+        'version': wf_version,
+        'execution': {
+            'runner_name': execution_runner_name,
+            'runner_version': execution_runner_version,
+            'job_id': execution_job_id
+        },
+        'input': get_workflow_data_files(yaml_data)
+    }
+
+def get_workflow_data_files(yaml_data):
+    files = []
+    filepath_keys = []
+    for read_group in yaml_data.get('readGroups'):
+        for file in read_group.get('files'):
+            if "file://" in file.get('path'):
+                repository = "local"
+                bundle_id = None
+                object_id = None
+            else:
+                _, _, repository, bundle_id, object_id = str(file.get('path')).split('/')
+
+            if not file.get('path') in filepath_keys:
+                files.append({
+                    'repository': repository,
+                    'bundle_id': bundle_id,
+                    'object_id': object_id,
+                    'file_name': os.path.basename(file.get('fileName'))
+                })
+                filepath_keys.append(file.get('path'))
+    return files
 
 def get_study(yaml_data):
     return yaml_data.get('study')
