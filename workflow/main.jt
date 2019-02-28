@@ -30,7 +30,7 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     util_dckr:
       type: string
-      default: quay.io/pancancer/util_dckr:0.0.3
+      default: quay.io/pancancer/util_dckr:0.0.4
     pcawg_aligner_dockstore_url:
       type: string
       is_file: true
