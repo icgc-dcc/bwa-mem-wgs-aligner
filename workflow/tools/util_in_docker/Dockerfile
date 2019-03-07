@@ -16,10 +16,6 @@ COPY . /app
 WORKDIR /app
 
 ADD cgc-uploader.tgz /app/
-#RUN tar -zxf /app/cgc-uploader.tgz
-
-#RUN wget  -O ~/cgc-uploader.tgz
-#
 
 RUN pip3 install -r requirements.txt
 
