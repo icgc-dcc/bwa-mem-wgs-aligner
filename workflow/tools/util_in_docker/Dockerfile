@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM java
 
 RUN apt-get update
 RUN apt-get install -y python3-pip python3-dev
@@ -8,11 +8,20 @@ RUN apt-get update && \
 RUN cd /usr/local/bin
 RUN ln -s /usr/bin/python3 python
 RUN pip3 install --upgrade pip
+RUN apt-get install -y software-properties-common wget
+
 
 VOLUME ["/app"]
 COPY . /app
 WORKDIR /app
 
+ADD cgc-uploader.tgz /app/
+#RUN tar -zxf /app/cgc-uploader.tgz
+
+#RUN wget  -O ~/cgc-uploader.tgz
+#
+
 RUN pip3 install -r requirements.txt
 
 ENV PATH="/app:${PATH}"
+ENV PATH="/app/cgc-uploader/bin:${PATH}"
