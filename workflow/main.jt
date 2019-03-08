@@ -868,15 +868,15 @@ tools:
 
   create_cgc_manifest:
     command: |
+      bash -c '
       docker pull ${util_dckr}
       docker run -v $(pwd):/data ${util_dckr} \
         ./generate_cgc_manifest.py \
         --filename ${filename}
         --song-payload ${song_payload}
         --output /data/${output}
-
-      echo "{ \"manifest\": "$(pwd)\/${output}" }" > output.json;
-
+      echo "{ \"manifest\": "$(pwd)\/${output}" }" > output.json
+      '
 
       input:
         util_dckr:
@@ -890,6 +890,7 @@ tools:
 
   cgc_upload:
     command: |
+      bash -c '
       docker pull ${util_dckr}
       docker run -e CGC_ACCESS_TOKEN -v ${manifest_file}:/data/manifest.csv:ro ${util_dckr} \
       cgc-uploader.sh \
@@ -898,6 +899,7 @@ tools:
       -mf manifest.csv \
       -mm experimental_strategy case_id aliquot_uuid \
           case_submitter_id sample_class study
+      '
 
     input:
       util_dckr:
