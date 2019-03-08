@@ -265,6 +265,7 @@ workflow:
           util_dckr: util_dckr
           filename: merged_output_bam@pcawg_aligner
           song_payload: payload@generate_song_payload
+          output: 'cgc_bam_manifest.csv'
         depends_on:
         - completed@publish_song_payload_collab
 
@@ -274,6 +275,7 @@ workflow:
           util_dckr: util_dckr
           filename: merged_output_bai@pcawg_aligner
           song_payload: payload@generate_song_payload
+          output: 'cgc_bai_manifest.csv'
         depends_on:
         - completed@publish_song_payload_collab
 
@@ -871,15 +873,17 @@ tools:
         ./generate_cgc_manifest.py \
         --filename ${filename}
         --song-payload ${song_payload}
-        --output /data/cgc_manifest.csv
+        --output /data/${output}
 
-      echo "{ \"manifest\": "$(pwd)\/cgc_manifest.csv" }" > output.json;
+      echo "{ \"manifest\": "$(pwd)\/${output}" }" > output.json;
 
 
       input:
         util_dckr:
           type: string
         filename:
+          type: string
+        output:
           type: string
         song_payload:
           type: string
