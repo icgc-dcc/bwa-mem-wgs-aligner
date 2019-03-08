@@ -64,6 +64,8 @@ workflow:
       type: string
       is_file: true
       default: "[genome.fa.gz]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz"
+    cgc_project_name:
+      type: string
 
   tasks:
     validate_metadata:
@@ -256,6 +258,38 @@ workflow:
     #    analysis_id: analysisId@save_song_payload_aws
     #  depends_on:
     #  - completed@score_upload_aws
+
+    create_cgc_bam_manifest:
+        tool: create_cgc_manifest
+        input:
+          util_dckr: util_dckr
+          filename: merged_output_bam@pcawg_aligner
+          song_payload: payload@generate_song_payload
+        depends_on:
+        - completed@publish_song_payload_collab
+
+    create_cgc_bai_manifest:
+        tool: create_cgc_manifest
+        input:
+          util_dckr: util_dckr
+          filename: merged_output_bai@pcawg_aligner
+          song_payload: payload@generate_song_payload
+        depends_on:
+        - completed@publish_song_payload_collab
+
+    cgc_bam_upload:
+      tool: cgc_upload
+      input:
+        util_dckr: util_dckr
+        manifest_file: manifest@create_cgc_bam_manifest
+        project_name: cgc_project_name
+
+    cgc_bai_upload:
+      tool: cgc_upload
+      input:
+        util_dckr: util_dckr
+        manifest_file: manifest@create_cgc_bai_manifest
+        project_name: cgc_project_name
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
@@ -823,11 +857,50 @@ tools:
 
     input:
       is_allowed:
-        type: tring
+        type: string
       manifest_file:
         type: string
         is_file: true
       song_metadata_url:
+        type: string
+
+  create_cgc_manifest:
+    command: |
+      docker pull ${util_dckr}
+      docker run -v $(pwd):/data ${util_dckr} \
+        ./generate_cgc_manifest.py \
+        --filename ${filename}
+        --song-payload ${song_payload}
+        --output /data/cgc_manifest.csv
+
+      echo "{ \"manifest\": "$(pwd)\/cgc_manifest.csv" }" > output.json;
+
+
+      input:
+        util_dckr:
+          type: string
+        filename:
+          type: string
+        song_payload:
+          type: string
+
+  cgc_upload:
+    command: |
+      docker pull ${util_dckr}
+      docker run -e CGC_ACCESS_TOKEN -v ${manifest_file}:/data/manifest.csv:ro ${util_dckr} \
+      cgc-uploader.sh \
+      -t os.environ["CGC_ACCESS_TOKEN"] \
+      -p ${project_name} \
+      -mf manifest.csv \
+      -mm experimental_strategy case_id aliquot_uuid \
+          case_submitter_id sample_class study
+
+    input:
+      util_dckr:
+        type: string
+      project_name:
+        type: string
+      manifest_file:
         type: string
 
   publish_song_payload:
