@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import pathlib
 
 def main():
     """ Main program """
@@ -15,7 +16,7 @@ def main():
 
     with open(results.output,'w') as output_fp:
         payload = json.load(results.song_payload)
-        output_fp.write(','.join(['File name','experimental_strategy','case_id','aliquot_uuid','case_submitter_id','sample_class','study'])+'\n')
+        output_fp.write(','.join(['File name','experimental_strategy','case_id','aliquot_uuid','case_submitter_id','sample_class','study','ftype'])+'\n')
         for filename in results.filenames:
             output_fp.write(','.join([
                 filename,
@@ -24,7 +25,8 @@ def main():
                 payload.get('sample').get('info').get('aliquotId'),
                 payload.get('sample').get('donor').get('donorSubmitterId'),
                 payload.get('sample').get('specimen').get('specimenClass'),
-                payload.get('study')
+                payload.get('study'),
+                pathlib.Path(filename).suffix
             ])+'\n')
 
 if __name__ == "__main__":

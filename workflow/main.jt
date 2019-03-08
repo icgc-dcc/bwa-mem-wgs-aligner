@@ -888,7 +888,7 @@ tools:
       -f ${study} \
       -mf manifest.csv \
       -mm experimental_strategy case_id aliquot_uuid \
-          case_submitter_id sample_class study
+          case_submitter_id sample_class study ftype
       '
 
     input:
