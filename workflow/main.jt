@@ -259,23 +259,14 @@ workflow:
     #  depends_on:
     #  - completed@score_upload_aws
 
-    create_cgc_bam_manifest:
+    create_cgc_manifest:
         tool: create_cgc_manifest
         input:
           util_dckr: util_dckr
-          filename: merged_output_bam@pcawg_aligner
+          bam_filename: merged_output_bam@pcawg_aligner
+          bai_filename: merged_output_bai@pcawg_aligner
           song_payload: payload@generate_song_payload
           output: 'cgc_bam_manifest.csv'
-        depends_on:
-        - completed@publish_song_payload_collab
-
-    create_cgc_bai_manifest:
-        tool: create_cgc_manifest
-        input:
-          util_dckr: util_dckr
-          filename: merged_output_bai@pcawg_aligner
-          song_payload: payload@generate_song_payload
-          output: 'cgc_bai_manifest.csv'
         depends_on:
         - completed@publish_song_payload_collab
 
@@ -285,13 +276,9 @@ workflow:
         util_dckr: util_dckr
         manifest_file: manifest@create_cgc_bam_manifest
         project_name: cgc_project_name
-
-    cgc_bai_upload:
-      tool: cgc_upload
-      input:
-        util_dckr: util_dckr
-        manifest_file: manifest@create_cgc_bai_manifest
-        project_name: cgc_project_name
+        study: study@validate_metadata
+      depends_on:
+        - completed@publish_song_payload_collab
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
@@ -872,7 +859,7 @@ tools:
       docker pull ${util_dckr}
       docker run -v $(pwd):/data ${util_dckr} \
         ./generate_cgc_manifest.py \
-        --filename ${filename}
+        --filenames ${bam_filename} ${bai_filename}
         --song-payload ${song_payload}
         --output /data/${output}
       echo "{ \"manifest\": "$(pwd)\/${output}" }" > output.json
@@ -881,7 +868,9 @@ tools:
       input:
         util_dckr:
           type: string
-        filename:
+        bam_filename:
+          type: string
+        bai_filename:
           type: string
         output:
           type: string
@@ -896,6 +885,7 @@ tools:
       cgc-uploader.sh \
       -t os.environ["CGC_ACCESS_TOKEN"] \
       -p ${project_name} \
+      -f ${study} \
       -mf manifest.csv \
       -mm experimental_strategy case_id aliquot_uuid \
           case_submitter_id sample_class study
@@ -907,6 +897,8 @@ tools:
       project_name:
         type: string
       manifest_file:
+        type: string
+      study:
         type: string
 
   publish_song_payload:
