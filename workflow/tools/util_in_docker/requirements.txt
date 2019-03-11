@@ -1,2 +1,0 @@
-git+https://github.com/baminou/overture-song-payload.git@0.0.5#egg=overture_song_payload
-pyyaml>=4.2b1

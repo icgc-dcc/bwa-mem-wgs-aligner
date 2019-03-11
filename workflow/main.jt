@@ -269,7 +269,7 @@ workflow:
         depends_on:
         - completed@publish_song_payload_collab
 
-    cgc_bam_upload:
+    cgc_upload:
       tool: cgc_upload
       input:
         util_dckr: util_dckr
@@ -827,6 +827,7 @@ tools:
   score_upload:
     command: |
       bash -c '
+      set -euxo pipefail
       set -e
       if [ ${is_allowed} = True ]; then
         profile="collab"
@@ -855,12 +856,13 @@ tools:
   create_cgc_manifest:
     command: |
       bash -c '
+      set -euxo pipefail
       docker pull ${util_dckr}
       docker run -v $(pwd):/data ${util_dckr} \
         ./generate_cgc_manifest.py \
         --filenames ${bam_filename} ${bai_filename}
         --song-payload ${song_payload}
-      echo "{ \"manifest\": "$(pwd)\/manifest.txt" }" > output.json
+      echo "{ \"manifest\": \"$(pwd)/manifest.txt\" }" > output.json
       '
 
       input:
