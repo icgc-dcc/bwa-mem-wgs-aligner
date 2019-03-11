@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert SONG payload to CGC manifest file')
     parser.add_argument('--filenames',dest='filenames', nargs='+',required=True)
     parser.add_argument('--song-payload',dest='song_payload', type=argparse.FileType('r'), required=True)
-    parser.add_argument('--output',dest='output', required=True)
+    parser.add_argument('--output',dest='output', default="manifest.txt")
 
     results = parser.parse_args()
 
