@@ -867,18 +867,18 @@ tools:
       echo "{ \"manifest\": \"$(pwd)/manifest.txt\" }" > output.json
       '
 
-      input:
-        util_dckr:
-          type: string
-        bam_filename:
-          type: string
-        bai_filename:
-          type: string
-        song_payload:
-          type: string
-      output:
-        manifest:
-          type: string
+    input:
+      util_dckr:
+        type: string
+      bam_filename:
+        type: string
+      bai_filename:
+        type: string
+      song_payload:
+        type: string
+    output:
+      manifest:
+        type: string
 
   cgc_upload:
     command: |
