@@ -863,7 +863,7 @@ tools:
         ${util_dckr} \
         ./generate_cgc_manifest.py \
         --filenames ${bam_filename} ${bai_filename} \
-        --song-payload /data/song_payload.json
+        --song-payload /data/song_payload.json \
         --output /data/manifest.txt
       echo "{ \"manifest\": \"$(pwd)/manifest.txt\" }" > output.json
       '
