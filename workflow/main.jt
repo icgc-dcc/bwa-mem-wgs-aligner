@@ -277,7 +277,7 @@ workflow:
         project_name: cgc_project_name
         study: study@validate_metadata
       depends_on:
-        - completed@publish_song_payload_collab
+        - completed@create_cgc_manifest
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
