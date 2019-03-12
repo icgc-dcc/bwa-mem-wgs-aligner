@@ -857,10 +857,13 @@ tools:
       bash -c '
       set -euxo pipefail
       docker pull ${util_dckr}
-      docker run -v $(pwd):/data ${util_dckr} \
+      docker run \
+        -v $(pwd):/data \
+        -v ${song_payload}:/data/song_payload.json
+        ${util_dckr} \
         ./generate_cgc_manifest.py \
         --filenames ${bam_filename} ${bai_filename} \
-        --song-payload ${song_payload}
+        --song-payload /data/song_payload.json
       echo "{ \"manifest\": \"$(pwd)/manifest.txt\" }" > output.json
       '
 

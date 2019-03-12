@@ -21,7 +21,7 @@ def main():
             output_fp.write(','.join([
                 filename,
                 payload.get('experiment').get('libraryStrategy'),
-                payload.get('sample').get('donor').get('donorId'),
+                payload.get('sample').get('donor').get('donorSubmitterId'),
                 payload.get('sample').get('info').get('aliquotId'),
                 payload.get('sample').get('donor').get('donorSubmitterId'),
                 payload.get('sample').get('specimen').get('specimenClass'),
