@@ -21,10 +21,10 @@ def main():
             output_fp.write(','.join([
                 filename,
                 payload.get('experiment').get('libraryStrategy'),
-                payload.get('sample').get('donor').get('donorSubmitterId'),
-                payload.get('sample').get('info').get('aliquotId'),
-                payload.get('sample').get('donor').get('donorSubmitterId'),
-                payload.get('sample').get('specimen').get('specimenClass'),
+                payload.get('sample')[0].get('donor').get('donorSubmitterId'),
+                payload.get('sample')[0].get('info').get('aliquotId'),
+                payload.get('sample')[0].get('donor').get('donorSubmitterId'),
+                payload.get('sample')[0].get('specimen').get('specimenClass'),
                 payload.get('study'),
                 pathlib.Path(filename).suffix[1:]
             ])+'\n')
