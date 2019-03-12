@@ -859,7 +859,7 @@ tools:
       docker pull ${util_dckr}
       docker run \
         -v $(pwd):/data \
-        -v ${song_payload}:/data/song_payload.json
+        -v ${song_payload}:/data/song_payload.json \
         ${util_dckr} \
         ./generate_cgc_manifest.py \
         --filenames ${bam_filename} ${bai_filename} \
