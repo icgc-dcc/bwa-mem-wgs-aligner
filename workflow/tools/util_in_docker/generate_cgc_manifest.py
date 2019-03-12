@@ -26,7 +26,7 @@ def main():
                 payload.get('sample').get('donor').get('donorSubmitterId'),
                 payload.get('sample').get('specimen').get('specimenClass'),
                 payload.get('study'),
-                pathlib.Path(filename).suffix
+                pathlib.Path(filename).suffix[1:]
             ])+'\n')
 
 if __name__ == "__main__":

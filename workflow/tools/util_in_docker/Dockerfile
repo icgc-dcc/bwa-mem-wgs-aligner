@@ -34,10 +34,9 @@ RUN export JAVA_HOME
 COPY . /app
 
 RUN pip3 install /overture-song-payload-0.0.5/
-RUN pip3 install pyyaml>=4.2b1
+RUN pip3 install 'pyyaml>=4.2b1'
 
-ENV PATH="/app:${PATH}"
-ENV PATH="/app/cgc-uploader/bin:${PATH}"
+ENV PATH="/app:/app/cgc-uploader/bin:${PATH}"
 
 RUN mv cgc-uploader /app
 

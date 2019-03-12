@@ -860,7 +860,7 @@ tools:
       docker pull ${util_dckr}
       docker run -v $(pwd):/data ${util_dckr} \
         ./generate_cgc_manifest.py \
-        --filenames ${bam_filename} ${bai_filename}
+        --filenames ${bam_filename} ${bai_filename} \
         --song-payload ${song_payload}
       echo "{ \"manifest\": \"$(pwd)/manifest.txt\" }" > output.json
       '
@@ -881,13 +881,14 @@ tools:
   cgc_upload:
     command: |
       bash -c '
+      set -euxo pipefail
       docker pull ${util_dckr}
       docker run -e CGC_ACCESS_TOKEN -v ${manifest_file}:/data/manifest.csv:ro ${util_dckr} \
       cgc-uploader.sh \
-      -t os.environ["CGC_ACCESS_TOKEN"] \
+      -t $CGC_ACCESS_TOKEN \
       -p ${project_name} \
       -f ${study} \
-      -mf manifest.csv \
+      -mf /data/manifest.csv \
       -mm experimental_strategy case_id aliquot_uuid \
           case_submitter_id sample_class study ftype
       '
