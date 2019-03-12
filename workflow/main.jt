@@ -828,7 +828,6 @@ tools:
     command: |
       bash -c '
       set -euxo pipefail
-      set -e
       if [ ${is_allowed} = True ]; then
         profile="collab"
         if [[ ${song_metadata_url} == *"virginia"* ]]; then
