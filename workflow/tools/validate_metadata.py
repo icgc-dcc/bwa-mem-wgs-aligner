@@ -118,7 +118,7 @@ cgc_allowed_studies = { 'LIRI-JP', 'PACA-CA', 'PRAD-CA', 'RECA-EU', 'PAEN-AU',
                         'PRAD-UK', 'CMDI-UK', 'LINC-JP', 'ORCA-IN', 'BTCA-SG',
                         'LAML-KR', 'LICA-FR', 'CLLE-ES', 'ESAD-UK', 'PAEN-IT' }
 
-cgc_upload_allowed = task_dict['input'].get('cgc_project_name') in cgc_allowed_studies and not task_dict['input'].get('cgc_project_name') == None
+cgc_upload_allowed = study in cgc_allowed_studies and task_dict['input'].get('cgc_project_name')
 
 output.update({
         'aliquot_id': aliquot_id,
