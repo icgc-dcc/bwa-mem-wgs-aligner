@@ -117,7 +117,8 @@ cgc_allowed_studies = { 'LIRI-JP', 'PACA-CA', 'PRAD-CA', 'RECA-EU', 'PAEN-AU',
                         'PACA-AU', 'BOCA-UK','OV-AU', 'MELA-AU', 'BRCA-UK',
                         'PRAD-UK', 'CMDI-UK', 'LINC-JP', 'ORCA-IN', 'BTCA-SG',
                         'LAML-KR', 'LICA-FR', 'CLLE-ES', 'ESAD-UK', 'PAEN-IT' }
-cgc_upload_allowed = study in cgc_allowed_studies
+
+cgc_upload_allowed = study in cgc_allowed_studies and not study == None
 
 output.update({
         'aliquot_id': aliquot_id,

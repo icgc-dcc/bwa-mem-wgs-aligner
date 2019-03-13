@@ -262,6 +262,7 @@ workflow:
     create_cgc_manifest:
         tool: create_cgc_manifest
         input:
+          is_allowed: cgc_upload_allowed@validate_metadata
           util_dckr: util_dckr
           bam_filename: merged_output_bam@pcawg_aligner
           bai_filename: merged_output_bai@pcawg_aligner
@@ -272,6 +273,7 @@ workflow:
     cgc_upload:
       tool: cgc_upload
       input:
+        is_allowed: cgc_upload_allowed@validate_metadata
         util_dckr: util_dckr
         manifest_file: manifest@create_cgc_manifest
         project_name: cgc_project_name
@@ -858,19 +860,26 @@ tools:
     command: |
       bash -c '
       set -euxo pipefail
-      docker pull ${util_dckr}
-      docker run \
-        -v $(pwd):/data \
-        -v ${song_payload}:/data/song_payload.json \
-        ${util_dckr} \
-        ./generate_cgc_manifest.py \
-        --filenames ${bam_filename} ${bai_filename} \
-        --song-payload /data/song_payload.json \
-        --output /data/manifest.txt
-      echo "{ \"manifest\": \"$(pwd)/manifest.txt\" }" > output.json
+      if [ ${is_allowed} = True ]; then
+        docker pull ${util_dckr}
+        docker run \
+          -v $(pwd):/data \
+          -v ${song_payload}:/data/song_payload.json \
+          ${util_dckr} \
+          ./generate_cgc_manifest.py \
+          --filenames ${bam_filename} ${bai_filename} \
+          --song-payload /data/song_payload.json \
+          --output /data/manifest.txt
+        echo "{ \"manifest\": \"$(pwd)/manifest.txt\", \"_skipped\": false }" > output.json
+
+      else
+        echo "{ \"_skipped\": true }" > output.json;
+      fi
       '
 
     input:
+      is_allowed:
+        type: string
       util_dckr:
         type: string
       bam_filename:
@@ -887,22 +896,29 @@ tools:
     command: |
       bash -c '
       set -euxo pipefail
-      docker pull ${util_dckr}
-      docker run \
-      -v ${bam_filename}:/data/$(basename ${bam_filename}):ro \
-      -v ${bai_filename}:/data/$(basename ${bai_filename}):ro \
-      -v ${manifest_file}:/data/manifest.txt:ro \
-      ${util_dckr} \
-      cgc-uploader.sh \
-      -t $CGC_ACCESS_TOKEN \
-      -p ${project_name} \
-      -f ${study} \
-      -mf /data/manifest.txt \
-      -mm experimental_strategy case_id aliquot_uuid \
-          case_submitter_id sample_class study ftype
+      if [ ${is_allowed} = True ]; then
+        docker pull ${util_dckr}
+        docker run \
+        -v ${bam_filename}:/data/$(basename ${bam_filename}):ro \
+        -v ${bai_filename}:/data/$(basename ${bai_filename}):ro \
+        -v ${manifest_file}:/data/manifest.txt:ro \
+        ${util_dckr} \
+        cgc-uploader.sh \
+        -t $CGC_ACCESS_TOKEN \
+        -p ${project_name} \
+        -f ${study} \
+        -mf /data/manifest.txt \
+        -mm experimental_strategy case_id aliquot_uuid \
+            case_submitter_id sample_class study ftype
+        echo "{ \"_skipped\": false }" > output.json;
+      else
+        echo "{ \"_skipped\": true }" > output.json;
+      fi
       '
 
     input:
+      is_allowed:
+        type: string
       util_dckr:
         type: string
       bam_filename:
