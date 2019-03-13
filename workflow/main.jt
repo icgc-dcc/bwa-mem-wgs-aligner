@@ -72,6 +72,7 @@ workflow:
       tool: validate_metadata
       input:
         metadata_yaml: metadata_yaml
+        cgc_project_name: cgc_project_name
 
     download:
       tool: download
@@ -293,6 +294,8 @@ tools:
       metadata_yaml:
         type: string
         is_file: true
+      cgc_project_name:
+        type: string
 
     output:
       input_format:
