@@ -4,6 +4,7 @@
 import argparse
 import json
 import pathlib
+import os
 
 def main():
     """ Main program """
@@ -19,7 +20,7 @@ def main():
         output_fp.write(','.join(['File name','experimental_strategy','case_id','aliquot_uuid','case_submitter_id','sample_class','study','ftype'])+'\n')
         for filename in results.filenames:
             output_fp.write(','.join([
-                filename,
+                os.path.basename(filename),
                 payload.get('experiment').get('libraryStrategy'),
                 payload.get('sample')[0].get('donor').get('donorSubmitterId'),
                 payload.get('sample')[0].get('info').get('aliquotId'),

@@ -276,6 +276,8 @@ workflow:
         manifest_file: manifest@create_cgc_manifest
         project_name: cgc_project_name
         study: study@validate_metadata
+        bam_filename: merged_output_bam@pcawg_aligner
+        bai_filename: merged_output_bai@pcawg_aligner
       depends_on:
         - completed@create_cgc_manifest
 
@@ -886,18 +888,25 @@ tools:
       bash -c '
       set -euxo pipefail
       docker pull ${util_dckr}
-      docker run -e CGC_ACCESS_TOKEN -v ${manifest_file}:/data/manifest.csv:ro ${util_dckr} \
+      docker run \
+      -v ${bam_filename}:/data/$(basename ${bam_filename}):ro \
+      -v ${bai_filename}:/data/$(basename ${bai_filename}):ro \
+      -v ${manifest_file}:/data/manifest.txt:ro ${util_dckr} \
       cgc-uploader.sh \
       -t $CGC_ACCESS_TOKEN \
       -p ${project_name} \
       -f ${study} \
-      -mf /data/manifest.csv \
+      -mf /data/manifest.txt \
       -mm experimental_strategy case_id aliquot_uuid \
           case_submitter_id sample_class study ftype
       '
 
     input:
       util_dckr:
+        type: string
+      bam_filename:
+        type: string
+      bai_filename:
         type: string
       project_name:
         type: string
