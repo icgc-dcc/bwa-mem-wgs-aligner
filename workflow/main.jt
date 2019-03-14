@@ -876,7 +876,7 @@ tools:
         echo "{ \"manifest\": \"$(pwd)/manifest.csv\", \"_skipped\": false }" > output.json
 
       else
-        echo "{ \"_skipped\": true }" > output.json;
+        echo "{ \"manifest\": \"$(pwd)/manifest.csv\", \"_skipped\": true }" > output.json
       fi
       '
 
