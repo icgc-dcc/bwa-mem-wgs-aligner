@@ -288,7 +288,7 @@ workflow:
       tool: delete_directory
       input:
         dir: output_dir@pcawg_aligner
-        skipped: _skipped@cgc_upload
+        skipped: skipped@cgc_upload
       depends_on:
         - completed@cgc_upload
 
@@ -296,7 +296,7 @@ workflow:
       tool: delete_directory
       input:
         dir: output_dir@aligned_bam_qc
-        skipped: _skipped@cgc_upload
+        skipped: skipped@cgc_upload
       depends_on:
         - completed@cgc_upload
 
