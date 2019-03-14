@@ -284,6 +284,22 @@ workflow:
       depends_on:
         - completed@create_cgc_manifest
 
+    delete_pcawg_aligner:
+      tool: delete_directory
+      input:
+        dir: output_dir@pcawg_aligner
+        skipped: skipped@cgc_upload
+      depends_on:
+        - completed@cgc_upload
+
+    delete_aligned_bam_qc:
+      tool: delete_directory
+      input:
+        dir: output_dir@aligned_bam_qc
+        skipped: skipped@cgc_upload
+      depends_on:
+        - completed@cgc_upload
+
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
 tools:
@@ -933,6 +949,19 @@ tools:
       manifest_file:
         type: string
       study:
+        type: string
+
+  delete_directory:
+    command: |
+      bash -c '
+      if [ ${skipped} = false ]; then
+        rm -rf ${dir}
+      fi
+      '
+    input:
+      dir:
+        type: string
+      skipped:
         type: string
 
   publish_song_payload:
