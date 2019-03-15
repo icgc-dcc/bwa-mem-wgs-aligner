@@ -475,7 +475,7 @@ tools:
             if len(lines) == 2:
               break
         data = dict(zip(lines[0], lines[1]))
-        return data["PF_BASES"]
+        return int(data["PF_BASES"])
 
       metrics = []
       bam_dir = None
