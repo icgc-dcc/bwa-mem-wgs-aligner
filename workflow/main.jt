@@ -959,7 +959,7 @@ tools:
         if [ $(basename ${dir}) = task.pcawg_aligner ]; then
           rm -f ${dir}/*.wgs.*
         elif [ $(basename ${dir}) = task.aligned_bam_qc ]; then
-          rm -rf ${dir}/multiple_metrics.*
+          rm -f ${dir}/multiple_metrics.*
         fi
         echo "{ \"task_skipped\": false }" > output.json;
       else
