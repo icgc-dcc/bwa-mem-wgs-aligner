@@ -24,6 +24,9 @@ workflow:
       type: string
       is_file: true
       is_required: true
+    min_coverage:
+      type: number
+      default: 20.
     picard_jar:
       type: string
       is_file: true
@@ -118,6 +121,7 @@ workflow:
       input:
         lane_bams: bams@add_comment
         picard_jar: picard_jar
+        min_coverage: min_coverage
 
     pcawg_aligner:
       tool: pcawg_aligner
@@ -132,6 +136,8 @@ workflow:
         reference_gz_bwt: reference_gz_bwt
         reference_gz_fai: reference_gz_fai
         reference_gz: reference_gz
+      depends_on:
+      - completed@lane_bam_qc
 
     aligned_bam_qc:
       tool: aligned_bam_qc
@@ -455,8 +461,25 @@ tools:
       import subprocess
       lane_bams = sys.argv[1].split(",")
 
+      min_coverage = ${min_coverage}
+      genome_size = 3000000000.0
+
+      def get_pf_bases(metrics_file):
+        lines = []
+        with open(metrics_file, "r") as m:
+          for row in m:
+            col = row.strip().split("\t")
+            if col[0].startswith("#") or len(col) == 1:
+              continue
+            lines.append(col)
+            if len(lines) == 2:
+              break
+        data = dict(zip(lines[0], lines[1]))
+        return int(data["PF_BASES"])
+
       metrics = []
       bam_dir = None
+      pf_bases = 0
       for bam in lane_bams:
         metrics_file = "%s.quality_yield_metrics.txt" % bam
         lane_bam_qc_dir = os.path.dirname(os.path.abspath(bam))
@@ -467,11 +490,20 @@ tools:
         except Exception as e:
           exit(stderr)
         metrics.append(metrics_file)
+        pf_bases += get_pf_bases(metrics_file)
+
+      coverage = pf_bases / genome_size
+      pass_cov = False if coverage < min_coverage else True
 
       print(json.dumps({
         "metrics": metrics,
-        "lane_bam_qc_dir": lane_bam_qc_dir
+        "lane_bam_qc_dir": lane_bam_qc_dir,
+        "coverage": coverage,
+        "pass_cov": pass_cov
       }))
+
+      if not pass_cov:
+        exit("Pass filter coverage lower than %s" % min_coverage)
 
       ' ${sep=',' lane_bams} > output.json
 
@@ -479,6 +511,8 @@ tools:
       picard_jar:
         type: string
         is_file: true
+      min_coverage:
+        type: number
       lane_bams:
         type: array
         items:
