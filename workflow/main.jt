@@ -284,7 +284,7 @@ workflow:
       depends_on:
         - completed@create_cgc_manifest
 
-    delete_pcawg_aligner:
+    cleanup_pcawg_aligner:
       tool: cleanup_directory
       input:
         dir: output_dir@pcawg_aligner
@@ -292,7 +292,7 @@ workflow:
       depends_on:
         - completed@cgc_upload
 
-    delete_aligned_bam_qc:
+    cleanup_aligned_bam_qc:
       tool: cleanup_directory
       input:
         dir: output_dir@aligned_bam_qc
