@@ -285,18 +285,18 @@ workflow:
         - completed@create_cgc_manifest
 
     delete_pcawg_aligner:
-      tool: delete_directory
+      tool: cleanup_directory
       input:
         dir: output_dir@pcawg_aligner
-        task_skipped: task_skipped@cgc_upload
+        previous_task_skipped: task_skipped@cgc_upload
       depends_on:
         - completed@cgc_upload
 
     delete_aligned_bam_qc:
-      tool: delete_directory
+      tool: cleanup_directory
       input:
         dir: output_dir@aligned_bam_qc
-        task_skipped: task_skipped@cgc_upload
+        previous_task_skipped: task_skipped@cgc_upload
       depends_on:
         - completed@cgc_upload
 
@@ -951,11 +951,11 @@ tools:
       study:
         type: string
 
-  delete_directory:
+  cleanup_directory:
     command: |
       bash -c '
       set -euxo pipefail
-      if [ ${task_skipped} = False ]; then
+      if [ ${previous_task_skipped} = False ]; then
         if [ $(basename ${dir}) = task.pcawg_aligner ]; then
           rm -f ${dir}/*.wgs.*
         elif [ $(basename ${dir}) = task.aligned_bam_qc ]; then
@@ -969,7 +969,7 @@ tools:
     input:
       dir:
         type: string
-      task_skipped:
+      previous_task_skipped:
         type: string
 
   publish_song_payload:
