@@ -284,6 +284,22 @@ workflow:
       depends_on:
         - completed@create_cgc_manifest
 
+    cleanup_pcawg_aligner:
+      tool: cleanup_directory
+      input:
+        dir: output_dir@pcawg_aligner
+        previous_task_skipped: task_skipped@cgc_upload
+      depends_on:
+        - completed@cgc_upload
+
+    cleanup_aligned_bam_qc:
+      tool: cleanup_directory
+      input:
+        dir: output_dir@aligned_bam_qc
+        previous_task_skipped: task_skipped@cgc_upload
+      depends_on:
+        - completed@cgc_upload
+
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
 tools:
@@ -701,7 +717,7 @@ tools:
 
       if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
-          o.write(json.dumps({"_skipped": True, "status": "", "uploadId": ""}))
+          o.write(json.dumps({"task_skipped": True, "status": "", "uploadId": ""}))
         sys.exit(0)
 
       headers = {
@@ -750,7 +766,7 @@ tools:
 
       if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
-          o.write(json.dumps({"_skipped": True, "status": "", "analysisId": ""}))
+          o.write(json.dumps({"task_skipped": True, "status": "", "analysisId": ""}))
         sys.exit(0)
 
       headers = {
@@ -794,7 +810,7 @@ tools:
 
       if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
-          o.write(json.dumps({"_skipped": True, "manifest_file": ""}))
+          o.write(json.dumps({"task_skipped": True, "manifest_file": ""}))
         sys.exit(0)
 
       res = requests.get("%s/studies/%s/analysis/%s" % ("${song_metadata_url}", "${study}", "${analysis_id}"))
@@ -843,10 +859,10 @@ tools:
 
         score-client --profile $profile upload --manifest ${manifest_file}
 
-        echo "{ \"_skipped\": false }" > output.json;
+        echo "{ \"task_skipped\": false }" > output.json;
 
       else
-        echo "{ \"_skipped\": true }" > output.json;
+        echo "{ \"task_skipped\": true }" > output.json;
       fi
       '
 
@@ -873,10 +889,10 @@ tools:
           --filenames ${bam_filename} ${bai_filename} \
           --song-payload /data/song_payload.json \
           --output /data/manifest.csv
-        echo "{ \"manifest\": \"$(pwd)/manifest.csv\", \"_skipped\": false }" > output.json
+        echo "{ \"manifest\": \"$(pwd)/manifest.csv\", \"task_skipped\": false }" > output.json
 
       else
-        echo "{ \"manifest\": \"$(pwd)/manifest.csv\", \"_skipped\": true }" > output.json
+        echo "{ \"manifest\": \"$(pwd)/manifest.csv\", \"task_skipped\": true }" > output.json
       fi
       '
 
@@ -913,9 +929,9 @@ tools:
         -mf /data/manifest.csv \
         -mm experimental_strategy case_id aliquot_uuid \
             case_submitter_id sample_class study ftype
-        echo "{ \"_skipped\": false }" > output.json;
+        echo "{ \"task_skipped\": false }" > output.json;
       else
-        echo "{ \"_skipped\": true }" > output.json;
+        echo "{ \"task_skipped\": true }" > output.json;
       fi
       '
 
@@ -935,6 +951,27 @@ tools:
       study:
         type: string
 
+  cleanup_directory:
+    command: |
+      bash -c '
+      set -euxo pipefail
+      if [ ${previous_task_skipped} = False ]; then
+        if [ $(basename ${dir}) = task.pcawg_aligner ]; then
+          rm -f ${dir}/*.wgs.*
+        elif [ $(basename ${dir}) = task.aligned_bam_qc ]; then
+          rm -f ${dir}/multiple_metrics.*
+        fi
+        echo "{ \"task_skipped\": false }" > output.json;
+      else
+        echo "{ \"task_skipped\": true }" > output.json;
+      fi
+      '
+    input:
+      dir:
+        type: string
+      previous_task_skipped:
+        type: string
+
   publish_song_payload:
     command: |
       python -c '
@@ -945,7 +982,7 @@ tools:
 
       if ("${is_allowed}" != "True"):
         with open("output.json", "w") as o:
-          o.write(json.dumps({ "_skipped": True }))
+          o.write(json.dumps({ "task_skipped": True }))
         sys.exit(0)
 
       headers = {
@@ -961,7 +998,7 @@ tools:
       if res.status_code >= 200 and res.status_code < 300:
         print("Publishing succeeded for ${analysis_id}: %s" % res)
         with open("output.json", "w") as o:
-          o.write(json.dumps({ "_skipped": False, "status": "ok" }))
+          o.write(json.dumps({ "task_skipped": False, "status": "ok" }))
       else:
         sys.exit("SONG publishing failed: %s" % res)
       '
