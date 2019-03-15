@@ -466,16 +466,16 @@ tools:
 
       def get_pf_bases(metrics_file):
         lines = []
-        with open(metrics_file, 'r') as m:
+        with open(metrics_file, "r") as m:
           for row in m:
-            col = row.strip().split('\t')
-            if col[0].startswith('#') or len(col) == 1:
+            col = row.strip().split("\t")
+            if col[0].startswith("#") or len(col) == 1:
               continue
             lines.append(col)
             if len(lines) == 2:
               break
         data = dict(zip(lines[0], lines[1]))
-        return data['PF_BASES']
+        return data["PF_BASES"]
 
       metrics = []
       bam_dir = None
