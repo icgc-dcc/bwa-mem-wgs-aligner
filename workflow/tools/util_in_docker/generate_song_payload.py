@@ -25,6 +25,8 @@ def main():
     parser.add_argument('lane_unaligned_dir')
     parser.add_argument('oxog_metrics_dir')
     parser.add_argument('multiple_metrics_dir')
+    parser.add_argument('--genome-build', dest="build", choices=['GRCh37', 'GRCh38'],
+                        default='GRCh37', required=True)
     parser.add_argument('--wf-name', dest="wf_name", required=True)
     parser.add_argument('--wf-version', dest="wf_version", required=True)
     parser.add_argument('--wf-execution-runner-name',dest="wf_exec_runner_name", default="JTracker")
@@ -43,13 +45,19 @@ def main():
         info={
             'isPcawg': get_analysis_info_ispcawg(),
             'dataset': get_analysis_info_dataset(),
-            'workflow': get_workflow_data(results.wf_name,results.wf_version,results.wf_exec_runner_name,results.wf_exec_runner_ver,results.wf_exec_job,yaml_data)
+            'workflow': get_workflow_data(results.wf_name,
+                                          results.wf_version,
+                                          results.wf_exec_runner_name,
+                                          results.wf_exec_runner_ver,
+                                          results.wf_exec_job,
+                                          yaml_data)
         },
         experiment_payload=ExperimentPayload(
             aligned=get_experiment_aligned(yaml_data),
-            reference_genome=get_experiment_reference_genome(yaml_data),
+            reference_genome=results.build,
             library_strategy=get_experiment_library_strategy(yaml_data),
-            paired_end=get_experiment_paired_end(open(os.path.join(results.multiple_metrics_dir, 'multiple_metrics.alignment_summary_metrics'),'r')),
+            paired_end=get_experiment_paired_end(
+                open(os.path.join(results.multiple_metrics_dir, 'multiple_metrics.alignment_summary_metrics'),'r')),
             info={
                 'insertSizeStats': {
                     'MEDIAN_INSERT_SIZE': int(float(insert_size_metrics.get('MEDIAN_INSERT_SIZE'))),
@@ -311,9 +319,6 @@ def get_experiment_insert_size(yaml_data):
 
 def get_experiment_library_strategy(yaml_data):
     return "WGS"
-
-def get_experiment_reference_genome(yaml_data):
-    return "GRCh37"
 
 def get_experiment_read_groups(yaml_data, quality_yield_metrics_dir):
     read_groups = []
