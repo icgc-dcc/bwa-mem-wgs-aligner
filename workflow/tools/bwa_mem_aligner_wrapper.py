@@ -51,6 +51,6 @@ for bam in lane_bams:
 
 with open("output.json", "w") as o:
   json.dump({
-    'output_dir': os.getcwd(),
-    'output_bams': output_bams
+    'output_dir': cwd,
+    'aligned_lane_bam_names': output_bams
   }, o)
