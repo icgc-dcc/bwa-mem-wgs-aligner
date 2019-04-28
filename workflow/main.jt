@@ -33,40 +33,45 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     util_dckr:
       type: string
-      default: quay.io/pancancer/util_dckr:0.0.5
-    pcawg_aligner_dockstore_url:
+      default: quay.io/pancancer/util_dckr:0.1.0
+    bwa_mem_aligner_docker:
       type: string
-      is_file: true
-      default: "[pcawg-bwa-mem.cwl]https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/Seqware-BWA-Workflow/2.6.8_1.4/Dockstore.cwl"  # commit hash: 8d259bc2d616a7af5266e870ef8da071337eee21
-      # default: "[pcawg-bwa-mem.cwl]https://dockstore.org/api/api/ga4gh/v2/tools/quay.io%2Fpancancer%2Fpcawg-bwa-mem-workflow/versions/2.6.8_1.4/plain-CWL/descriptor/Dockstore.cwl"
+      default: quay.io/pancancer/dna-seq-processing:latest
+    bam_merge_sort_markdup_docker:
+      type: string
+      default: quay.io/pancancer/dna-seq-processing:latest
     reference_gz_amb:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.amb]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.amb"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.amb]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.amb"
     reference_gz_sa:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.sa]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.sa"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.sa]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.sa"
     reference_gz_pac:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.pac]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.pac"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.pac]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.pac"
     reference_gz_ann:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.ann]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.ann"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.ann]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.ann"
     reference_gz_bwt:
       type: string
       is_file: true
-      default: "[genome.fa.gz.64.bwt]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.64.bwt"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.bwt]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.bwt"
+    reference_gz_alt:
+      type: string
+      is_file: true
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.alt]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.alt"
     reference_gz_fai:
       type: string
       is_file: true
-      default: "[genome.fa.gz.fai]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz.fai"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz.fai]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz.fai"
     reference_gz:
       type: string
       is_file: true
-      default: "[genome.fa.gz]https://dcc.icgc.org/api/v1/download?fn=/PCAWG/reference_data/pcawg-bwa-mem/genome.fa.gz"
+      default: "[GRCh38_hla_decoy_ebv.fa.gz]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz"
     cgc_project_name:
       type: string
 
@@ -123,12 +128,11 @@ workflow:
         picard_jar: picard_jar
         min_coverage: min_coverage
 
-    pcawg_aligner:
-      tool: pcawg_aligner
+    bwa_mem_aligner:
+      tool: bwa_mem_aligner
       input:
-        cwl_file: pcawg_aligner_dockstore_url
+        bwa_mem_aligner_docker: bwa_mem_aligner_docker
         lane_bams: bams@add_comment
-        output_file_basename: aligned_bam_basename@add_comment
         reference_gz_amb: reference_gz_amb
         reference_gz_sa: reference_gz_sa
         reference_gz_pac: reference_gz_pac
@@ -139,18 +143,28 @@ workflow:
       depends_on:
       - completed@lane_bam_qc
 
+    bam_merge_sort_markdup:
+      tool: bam_merge_sort_markdup
+      input:
+        bam_merge_sort_markdup_docker: bam_merge_sort_markdup_docker
+        aligned_lane_bam_names: aligned_lane_bam_names@bwa_mem_aligner
+        aligned_lane_bam_dir: output_dir@bwa_mem_aligner
+        output_file_basename: aligned_bam_basename@add_comment
+      depends_on:
+      - completed@bwa_mem_aligner
+
     aligned_bam_qc:
       tool: aligned_bam_qc
       input:
         picard_jar: picard_jar
-        aligned_bam: merged_output_bam@pcawg_aligner
+        aligned_bam: merged_output_bam@bam_merge_sort_markdup
         reference_sequence: reference_gz  # may need unzipped version
 
     aligned_bam_oxog_metrics:
       tool: aligned_bam_oxog_metrics
       input:
         picard_jar: picard_jar
-        aligned_bam: merged_output_bam@pcawg_aligner
+        aligned_bam: merged_output_bam@bam_merge_sort_markdup
         reference_sequence: reference_gz  # may need unzipped version
 
     # may add more QCs if needed
@@ -161,7 +175,7 @@ workflow:
         aliquot_id: aliquot_id@validate_metadata
         number_of_lanes: number_of_lanes@validate_metadata
         util_dckr: util_dckr
-        output_dir: output_dir@pcawg_aligner
+        output_dir: output_dir@bam_merge_sort_markdup
         task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
         lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
         task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
@@ -172,21 +186,21 @@ workflow:
       input:
         util_dckr: util_dckr
         metadata_yaml: metadata_yaml
-        bam_file: merged_output_bam@pcawg_aligner
-        bai_file: merged_output_bai@pcawg_aligner
+        bam_file: merged_output_bam@bam_merge_sort_markdup
+        bai_file: merged_output_bai@bam_merge_sort_markdup
         tar_file: tar_file@create_tar
         task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
         lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
         task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
 
-    upload_song_payload_collab:
-      tool: upload_song_payload
-      input:
-        is_allowed: collab_upload_allowed@validate_metadata
-        payload: payload@generate_song_payload
-        song_metadata_url: song_collab_url
-        study: study@validate_metadata
+    #upload_song_payload_collab:
+    #  tool: upload_song_payload
+    #  input:
+    #    is_allowed: collab_upload_allowed@validate_metadata
+    #    payload: payload@generate_song_payload
+    #    song_metadata_url: song_collab_url
+    #    study: study@validate_metadata
 
     #upload_song_payload_aws:
     #  tool: upload_song_payload
@@ -196,13 +210,13 @@ workflow:
     #    song_metadata_url: song_aws_url
     #    study: study@validate_metadata
 
-    save_song_payload_collab:
-      tool: save_song_payload
-      input:
-        is_allowed: collab_upload_allowed@validate_metadata
-        song_metadata_url: song_collab_url
-        study: study@validate_metadata
-        upload_id: uploadId@upload_song_payload_collab
+    #save_song_payload_collab:
+    #  tool: save_song_payload
+    #  input:
+    #    is_allowed: collab_upload_allowed@validate_metadata
+    #    song_metadata_url: song_collab_url
+    #    study: study@validate_metadata
+    #    upload_id: uploadId@upload_song_payload_collab
 
     #save_song_payload_aws:
     #  tool: save_song_payload
@@ -212,49 +226,49 @@ workflow:
     #    study: study@validate_metadata
     #    upload_id: uploadId@upload_song_payload_aws
 
-    create_manifest_file_collab:
-      tool: create_manifest_file
-      input:
-        is_allowed: collab_upload_allowed@validate_metadata
-        input_dir: output_dir@pcawg_aligner
-        song_metadata_url: song_collab_url
-        study: study@validate_metadata
-        analysis_id: analysisId@save_song_payload_collab
+    #create_manifest_file_collab:
+    #  tool: create_manifest_file
+    #  input:
+    #    is_allowed: collab_upload_allowed@validate_metadata
+    #    input_dir: output_dir@bam_merge_sort_markdup
+    #    song_metadata_url: song_collab_url
+    #    study: study@validate_metadata
+    #    analysis_id: analysisId@save_song_payload_collab
 
     #create_manifest_file_aws:
     #  tool: create_manifest_file
     #  input:
     #    is_allowed: aws_upload_allowed@validate_metadata
-    #    input_dir: output_dir@pcawg_aligner
+    #    input_dir: output_dir@bam_merge_sort_markdup
     #    song_metadata_url: song_aws_url
     #    study: study@validate_metadata
     #    analysis_id: analysisId@save_song_payload_aws
 
-    score_upload_collab:
-      tool: score_upload
-      input:
-        is_allowed: collab_upload_allowed@validate_metadata
-        manifest_file: manifest_file@create_manifest_file_collab
-        input_dir: output_dir@pcawg_aligner
-        song_metadata_url: song_collab_url
+    #score_upload_collab:
+    #  tool: score_upload
+    #  input:
+    #    is_allowed: collab_upload_allowed@validate_metadata
+    #    manifest_file: manifest_file@create_manifest_file_collab
+    #    input_dir: output_dir@bam_merge_sort_markdup
+    #    song_metadata_url: song_collab_url
 
     #score_upload_aws:
     #  tool: score_upload
     #  input:
     #    is_allowed: aws_upload_allowed@validate_metadata
     #    manifest_file: manifest_file@create_manifest_file_aws
-    #    input_dir: output_dir@pcawg_aligner
+    #    input_dir: output_dir@bam_merge_sort_markdup
     #    song_metadata_url: song_aws_url
 
-    publish_song_payload_collab:
-      tool: publish_song_payload
-      input:
-        is_allowed: collab_upload_allowed@validate_metadata
-        song_metadata_url: song_collab_url
-        study: study@validate_metadata
-        analysis_id: analysisId@save_song_payload_collab
-      depends_on:
-      - completed@score_upload_collab
+    #publish_song_payload_collab:
+    #  tool: publish_song_payload
+    #  input:
+    #    is_allowed: collab_upload_allowed@validate_metadata
+    #    song_metadata_url: song_collab_url
+    #    study: study@validate_metadata
+    #    analysis_id: analysisId@save_song_payload_collab
+    #  depends_on:
+    #  - completed@score_upload_collab
 
     #publish_song_payload_aws:
     #  tool: publish_song_payload
@@ -266,45 +280,45 @@ workflow:
     #  depends_on:
     #  - completed@score_upload_aws
 
-    create_cgc_manifest:
-        tool: create_cgc_manifest
-        input:
-          is_allowed: cgc_upload_allowed@validate_metadata
-          util_dckr: util_dckr
-          bam_filename: merged_output_bam@pcawg_aligner
-          bai_filename: merged_output_bai@pcawg_aligner
-          song_payload: payload@generate_song_payload
-        depends_on:
-        - completed@publish_song_payload_collab
+    #create_cgc_manifest:
+    #    tool: create_cgc_manifest
+    #    input:
+    #      is_allowed: cgc_upload_allowed@validate_metadata
+    #      util_dckr: util_dckr
+    #      bam_filename: merged_output_bam@bam_merge_sort_markdup
+    #      bai_filename: merged_output_bai@bam_merge_sort_markdup
+    #      song_payload: payload@generate_song_payload
+    #    depends_on:
+    #    - completed@publish_song_payload_collab
 
-    cgc_upload:
-      tool: cgc_upload
-      input:
-        is_allowed: cgc_upload_allowed@validate_metadata
-        util_dckr: util_dckr
-        manifest_file: manifest@create_cgc_manifest
-        project_name: cgc_project_name
-        study: study@validate_metadata
-        bam_filename: merged_output_bam@pcawg_aligner
-        bai_filename: merged_output_bai@pcawg_aligner
-      depends_on:
-        - completed@create_cgc_manifest
+    #cgc_upload:
+    #  tool: cgc_upload
+    #  input:
+    #    is_allowed: cgc_upload_allowed@validate_metadata
+    #    util_dckr: util_dckr
+    #    manifest_file: manifest@create_cgc_manifest
+    #    project_name: cgc_project_name
+    #    study: study@validate_metadata
+    #    bam_filename: merged_output_bam@bam_merge_sort_markdup
+    #    bai_filename: merged_output_bai@bam_merge_sort_markdup
+    #  depends_on:
+    #    - completed@create_cgc_manifest
 
-    cleanup_pcawg_aligner:
-      tool: cleanup_directory
-      input:
-        dir: output_dir@pcawg_aligner
-        previous_task_skipped: task_skipped@cgc_upload
-      depends_on:
-        - completed@cgc_upload
+    #cleanup_bam_merge_sort_markdup:
+    #  tool: cleanup_directory
+    #  input:
+    #    dir: output_dir@bam_merge_sort_markdup
+    #    previous_task_skipped: task_skipped@cgc_upload
+    #  depends_on:
+    #    - completed@cgc_upload
 
-    cleanup_aligned_bam_qc:
-      tool: cleanup_directory
-      input:
-        dir: output_dir@aligned_bam_qc
-        previous_task_skipped: task_skipped@cgc_upload
-      depends_on:
-        - completed@cgc_upload
+    #cleanup_aligned_bam_qc:
+    #  tool: cleanup_directory
+    #  input:
+    #    dir: output_dir@aligned_bam_qc
+    #    previous_task_skipped: task_skipped@cgc_upload
+    #  depends_on:
+    #    - completed@cgc_upload
 
 # A workflow is made up with one or more tools
 # Each tool can have its own docker imagine if desirable
@@ -526,30 +540,16 @@ tools:
           is_file: true
           glob_pattern: "*.quality_yield_metrics.txt"
 
-  pcawg_aligner:  # this is really a PCAWG BWA-MEM CWL workflow wrapper
-    command: |
-      pcawg_aligner.py --cwl_file ${cwl_file} \
-        --reads ${sep=' ' lane_bams} \
-        --output_dir datastore \
-        --output_file_basename ${output_file_basename} \
-        --reference_gz_amb ${reference_gz_amb} \
-        --reference_gz_sa ${reference_gz_sa} \
-        --reference_gz_pac ${reference_gz_pac} \
-        --reference_gz_ann ${reference_gz_ann} \
-        --reference_gz_bwt ${reference_gz_bwt} \
-        --reference_gz_fai ${reference_gz_fai} \
-        --reference_gz ${reference_gz}
+  bwa_mem_aligner:
+    command: bwa_mem_aligner_wrapper.py
     input:
-      cwl_file:
+      bwa_mem_aligner_docker:
         type: string
-        is_file: true
       lane_bams:
         type: array
         items:
           type: string
           is_file: true
-      output_file_basename:
-        type: string
       reference_gz_amb:
         type: string
         is_file: true
@@ -574,22 +574,54 @@ tools:
     output:  # output section is ignored for now
       output_dir:
         type: string
+        is_dir: true
+      aligned_lane_bam_names:
+        type: array
+        items:
+          type: string
+
+  bam_merge_sort_markdup:
+    command: |
+      docker pull ${merge_sort_markdup_docker} \
+      && docker run --rm \
+          --user 1000:1000 \
+          --workdir /data \
+          -v ${aligned_lane_bam_dir}:/data \
+          ${merge_sort_markdup_docker} \
+          bam-merge-sort-markdup.py \
+          picard-biobambam
+          -i ${sep=' ' aligned_lane_bam_names} \
+          -o ${output_file_basename}.bam \
+      && echo "{ \"output_dir\": \"$(pwd)\", \"merged_output_bam\": \"$(pwd)/${output_file_basename}.bam\",
+      \"merged_output_bai\": \"$(pwd)/${output_file_basename}.bam.bai\",
+      \"merged_output_md5\": \"$(pwd)/${output_file_basename}.bam.md5\",
+      \"merged_output_bam.duplicates-metrics\": \"$(pwd)/${output_file_basename}.bam.duplicates-metrics.txt\" }" > output.json
+    input:
+      merge_sort_markdup_docker:
+        type: string
+      aligned_lane_bam_dir:
+        type: string
+        is_dir: true
+      aligned_lane_bam_names:
+        type: string
+      output_file_basename:
+        type: string
+    output:
+      output_dir:
+        type: string
+        is_dir: true
       merged_output_bam:
         type: string
         is_file: true
-        value: "${output_file_basename}.bam"
       merged_output_bai:
         type: string
         is_file: true
-        value: "${output_file_basename}.bam.bai"
-      merged_output_metrics:
+      merged_output_md5:
         type: string
         is_file: true
-        value: "${output_file_basename}.bam.metrics"
-      merged_output_stats:
+      merged_output_bam.duplicates-metrics:
         type: string
         is_file: true
-        value: "${output_file_basename}.bam.stats.txt"
 
   aligned_bam_qc:  # this requires RScript, install it by 'apt install r-base-core'
     command: |
@@ -709,6 +741,7 @@ tools:
             /lane_unaligned \
             /task_aligned_bam_oxog_metrics_wkdir \
             /task_aligned_bam_qc_outdir \
+            --genome-build GRCh38 \
             --wf-name ${_wf_name} \
             --wf-version ${_wf_version} \
             --wf-execution-runner-version ${_jt_exec_version} \
@@ -856,7 +889,7 @@ tools:
           m.write("%s\t\t\n" % song_metadata["analysisId"])
           for f in song_metadata["file"]:
             m.write("%s\t%s\t%s\n" % (f["objectId"],
-                                      os.path.join(os.getcwd(), "..", "task.pcawg_aligner", f["fileName"]),
+                                      os.path.join(os.getcwd(), "..", "task.bam_merge_sort_markdup", f["fileName"]),
                                       f["fileMd5sum"]))
 
         with open("output.json", "w") as o:
@@ -990,7 +1023,7 @@ tools:
       bash -c '
       set -euxo pipefail
       if [ ${previous_task_skipped} = False ]; then
-        if [ $(basename ${dir}) = task.pcawg_aligner ]; then
+        if [ $(basename ${dir}) = task.bam_merge_sort_markdup ]; then
           rm -f ${dir}/*.wgs.*
         elif [ $(basename ${dir}) = task.aligned_bam_qc ]; then
           rm -f ${dir}/multiple_metrics.*

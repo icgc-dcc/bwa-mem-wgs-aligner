@@ -70,7 +70,7 @@ elif input_format == 'FASTQ':
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
 
-output['aligned_bam_basename'] = '.'.join([metadata.get('aliquotId'), str(len(output['bams'])), datetime.date.today().strftime("%Y%m%d"), 'wgs', 'grch37'])
+output['aligned_bam_basename'] = '.'.join([metadata.get('aliquotId'), str(len(output['bams'])), datetime.date.today().strftime("%Y%m%d"), 'wgs', 'grch38'])
 
 with open("output.json", "w") as o:
     o.write(json.dumps(output))
