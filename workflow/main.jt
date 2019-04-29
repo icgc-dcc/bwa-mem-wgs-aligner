@@ -139,6 +139,7 @@ workflow:
         reference_gz_ann: reference_gz_ann
         reference_gz_bwt: reference_gz_bwt
         reference_gz_fai: reference_gz_fai
+        reference_gz_alt: reference_gz_alt
         reference_gz: reference_gz
       depends_on:
       - completed@lane_bam_qc
@@ -585,8 +586,9 @@ tools:
       docker pull ${merge_sort_markdup_docker} \
       && docker run --rm \
           --user 1000:1000 \
-          --workdir /data \
-          -v ${aligned_lane_bam_dir}:/data \
+          --workdir /output \
+          -v $(pwd):/output:rw \
+          -v ${aligned_lane_bam_dir}:/data:ro \
           ${merge_sort_markdup_docker} \
           bam-merge-sort-markdup.py \
           picard-biobambam
