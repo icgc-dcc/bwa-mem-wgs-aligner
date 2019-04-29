@@ -21,7 +21,7 @@ reference_gz_sa = task_dict['input'].get('reference_gz_sa')
 reference_gz_amb = task_dict['input'].get('reference_gz_amb')
 
 # pull docker image
-subprocess.run(['docker pull %s' % bwa_mem_aligner_docker])
+subprocess.run(['docker', 'pull', '%s' % bwa_mem_aligner_docker])
 
 aligned_lane_bam_prefix = 'grch38-aligned'
 output_bams = []
@@ -29,21 +29,23 @@ for bam in lane_bams:
     try:
         subprocess.run(['docker', 'run', '--rm',
                         '--user', '1000:1000',
-                        '--workdir', '/data',
-                        '-v %s:/data/%s' % (reference_gz, os.path.basename(reference_gz)),
-                        '-v %s:/data/%s' % (reference_gz_fai, os.path.basename(reference_gz_fai)),
-                        '-v %s:/data/%s' % (reference_gz_alt, os.path.basename(reference_gz_alt)),
-                        '-v %s:/data/%s' % (reference_gz_bwt, os.path.basename(reference_gz_bwt)),
-                        '-v %s:/data/%s' % (reference_gz_ann, os.path.basename(reference_gz_ann)),
-                        '-v %s:/data/%s' % (reference_gz_pac, os.path.basename(reference_gz_pac)),
-                        '-v %s:/data/%s' % (reference_gz_sa, os.path.basename(reference_gz_sa)),
-                        '-v %s:/data/%s' % (reference_gz_amb, os.path.basename(reference_gz_amb)),
+                        '--workdir', '/output',
+                        '-v', '%s:/output:rw' % cwd,
+                        '-v', '%s:/data/%s:ro' % (reference_gz, os.path.basename(reference_gz)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_fai, os.path.basename(reference_gz_fai)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_alt, os.path.basename(reference_gz_alt)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_bwt, os.path.basename(reference_gz_bwt)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_ann, os.path.basename(reference_gz_ann)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_pac, os.path.basename(reference_gz_pac)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_sa, os.path.basename(reference_gz_sa)),
+                        '-v', '%s:/data/%s:ro' % (reference_gz_amb, os.path.basename(reference_gz_amb)),
+                        '-v', '%s:/data/%s:ro' % (bam, os.path.basename(bam)),
                         '%s' % bwa_mem_aligner_docker,
                         'bwa-mem-aligner.py',
-                        '-i /data/%s' % bam,
-                        '-o /data/%s.%s' % (aligned_lane_bam_prefix, os.path.basename(bam)),
-                        '-r /data/%s' % os.path.basename(reference_gz)
-                        ])
+                        '-i', '/data/%s' % os.path.basename(bam),
+                        '-o', '/output/%s.%s' % (aligned_lane_bam_prefix, os.path.basename(bam)),
+                        '-r', '/data/%s' % os.path.basename(reference_gz)
+                        ], check=True)
     except Exception as e:
         sys.exit('BWA MEM failed, input: %s' % bam)
 
