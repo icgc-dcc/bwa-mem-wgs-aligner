@@ -591,9 +591,9 @@ tools:
           -v ${aligned_lane_bam_dir}:/data:ro \
           ${bam_merge_sort_markdup_docker} \
           bam-merge-sort-markdup.py \
-          picard-biobambam
           -i ${sep=' ' aligned_lane_bam_names} \
           -o ${output_file_basename}.bam \
+          picard-biobambam \
       && echo "{ \"output_dir\": \"$(pwd)\", \"merged_output_bam\": \"$(pwd)/${output_file_basename}.bam\",
       \"merged_output_bai\": \"$(pwd)/${output_file_basename}.bam.bai\",
       \"merged_output_md5\": \"$(pwd)/${output_file_basename}.bam.md5\",
