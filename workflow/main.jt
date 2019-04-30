@@ -583,13 +583,13 @@ tools:
 
   bam_merge_sort_markdup:
     command: |
-      docker pull ${merge_sort_markdup_docker} \
+      docker pull ${bam_merge_sort_markdup_docker} \
       && docker run --rm \
           --user 1000:1000 \
           --workdir /output \
           -v $(pwd):/output:rw \
           -v ${aligned_lane_bam_dir}:/data:ro \
-          ${merge_sort_markdup_docker} \
+          ${bam_merge_sort_markdup_docker} \
           bam-merge-sort-markdup.py \
           picard-biobambam
           -i ${sep=' ' aligned_lane_bam_names} \
@@ -599,7 +599,7 @@ tools:
       \"merged_output_md5\": \"$(pwd)/${output_file_basename}.bam.md5\",
       \"merged_output_bam.duplicates-metrics\": \"$(pwd)/${output_file_basename}.bam.duplicates-metrics.txt\" }" > output.json
     input:
-      merge_sort_markdup_docker:
+      bam_merge_sort_markdup_docker:
         type: string
       aligned_lane_bam_dir:
         type: string
