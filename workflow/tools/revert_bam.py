@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 import json
-import time
+from multiprocessing import cpu_count
 
 """
 Major steps:
@@ -14,24 +14,22 @@ Major steps:
 task_dict = json.loads(sys.argv[1])
 
 cwd = os.getcwd()
+ncpu = cpu_count()
 
-picard = task_dict['input'].get('picard_jar')
 input_format = task_dict['input'].get('input_format')
 download_files = task_dict['input'].get('download_files')
+
 
 with open(task_dict['input'].get('metadata_json'), 'r') as f:
     metadata = json.load(f)
 
 output = {
-    'unaligned_by_rg_dir': None
+    'output_dir': cwd
 }
 
 # the inputs are BAM
 if input_format == 'BAM':
     files = metadata.get('files')
-    output_dir = os.path.join(cwd, 'unaligned_by_rg')
-    if not os.path.isdir(output_dir): os.makedirs(output_dir)
-    output['unaligned_by_rg_dir'] = output_dir
 
     for _file in files:
         file_path = _file.get('path')
@@ -46,27 +44,29 @@ if input_format == 'BAM':
         # check whether the download files exist
         if not os.path.isfile(file_with_path): sys.exit('\n The downloaded file: %s do not exist!' % file_with_path)
 
-        # Revert the bam to unaligned and lane level bam sorted by query name
-        # Suggested options from: https://github.com/broadinstitute/picard/issues/849#issuecomment-313128088
+        cmd = 'samtools split -f "%*_%#.bam" -@ %s %s' % (ncpu, file_with_path)
+        # Revert the bam to unaligned and lane level bam
+        print('command: %s' % cmd)
+        stdout, stderr, p, success = '', '', None, True
         try:
-            subprocess.run(['java', '-jar', picard,
-                            'RevertSam',
-                            'I=%s' % file_with_path,
-                            'SANITIZE=true',
-                            'ATTRIBUTE_TO_CLEAR=XT',
-                            'ATTRIBUTE_TO_CLEAR=XN',
-                            'ATTRIBUTE_TO_CLEAR=AS',
-                            'ATTRIBUTE_TO_CLEAR=OC',
-                            'ATTRIBUTE_TO_CLEAR=OP',
-                            'SORT_ORDER=queryname',
-                            'RESTORE_ORIGINAL_QUALITIES=true',
-                            'REMOVE_DUPLICATE_INFORMATION=true',
-                            'REMOVE_ALIGNMENT_INFORMATION=true',
-                            'OUTPUT_BY_READGROUP=true',
-                            'VALIDATION_STRINGENCY=LENIENT',
-                            'O=%s' % output_dir], check=True)
+            p = subprocess.Popen([cmd],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 shell=True)
+            stdout, stderr = p.communicate()
         except Exception as e:
-            sys.exit('\n%s: RevertSam failed: %s' %(e, file_with_path))
+            print('Execution failed: %s' % e, file=sys.stderr)
+            success = False
+
+        if p and p.returncode != 0:
+            print('Execution failed, none zero code returned.', file=sys.stderr)
+            success = False
+
+        print(stdout.decode("utf-8"))
+        print(stderr.decode("utf-8"), file=sys.stderr)
+
+        if not success:
+            sys.exit(p.returncode if p.returncode else 1)
 
     # delete the files at the very last step
     for file_dict in download_files:
