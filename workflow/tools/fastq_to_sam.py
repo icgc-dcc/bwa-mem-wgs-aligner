@@ -4,7 +4,6 @@ import os
 import subprocess
 import sys
 import json
-import time
 import re
 
 """
@@ -77,18 +76,17 @@ if input_format == 'FASTQ':
 
 
         # convert pair end fastq to unaligned and lane level bam sorted by query name
-        output_dir = os.path.join(cwd, 'lane_unaligned')
-        if not os.path.isdir(output_dir): os.makedirs(output_dir)
-
+        # convert readGroupId to filename friendly
+        rg_fname = "".join([ c if re.match(r"[a-zA-Z0-9\-_]", c) else "_" for c in readGroupId ])
         try:
             subprocess.run(['java', '-jar', picard,
                             'FastqToSam', 'FASTQ=%s' % file_with_path[0],
                             'FASTQ2=%s' % file_with_path[1],
-                            'OUTPUT=%s' % os.path.join(output_dir, readGroupId.replace(':', '_') + '.lane.bam')] + rg_args, check=True)
+                            'OUTPUT=%s' % os.path.join(cwd, rg_fname + '.lane.bam')] + rg_args, check=True)
         except Exception as e:
             sys.exit('\n%s: FastqToSam failed: %s and %s' % (e, file_with_path[0], file_with_path[1]))
 
-        output['bams'].append(os.path.join(output_dir, readGroupId.replace(':', '_') + '.lane.bam'))
+        output['bams'].append(os.path.join(cwd, rg_fname + '.lane.bam'))
 
     # delete the files at the very last step
     for file_dict in download_files:

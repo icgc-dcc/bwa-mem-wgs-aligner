@@ -103,28 +103,12 @@ workflow:
         download_files: download_files@download
         picard_jar: picard_jar
         input_format: input_format@validate_metadata
-
-    replace_readgroup:
-      tool: replace_readgroup
-      input:
-        metadata_json: metadata_json@validate_metadata
-        picard_jar: picard_jar
-        input_format: input_format@validate_metadata
-        unaligned_by_rg_dir: unaligned_by_rg_dir@revert_bam
-
-    add_comment:
-      tool: add_comment
-      input:
-        metadata_json: metadata_json@validate_metadata
         bams: bams@fastq_to_sam
-        picard_jar: picard_jar
-        input_format: input_format@validate_metadata
-        unaligned_rg_replace_dir: unaligned_rg_replace_dir@replace_readgroup
 
     lane_bam_qc:
       tool: lane_bam_qc
       input:
-        lane_bams: bams@add_comment
+        lane_bams: bams@revert_bam
         picard_jar: picard_jar
         min_coverage: min_coverage
 
@@ -132,7 +116,7 @@ workflow:
       tool: bwa_mem_aligner
       input:
         bwa_mem_aligner_docker: bwa_mem_aligner_docker
-        lane_bams: bams@add_comment
+        lane_bams: bams@revert_bam
         reference_gz_amb: reference_gz_amb
         reference_gz_sa: reference_gz_sa
         reference_gz_pac: reference_gz_pac
@@ -150,7 +134,7 @@ workflow:
         bam_merge_sort_markdup_docker: bam_merge_sort_markdup_docker
         aligned_lane_bam_names: aligned_lane_bam_names@bwa_mem_aligner
         aligned_lane_bam_dir: output_dir@bwa_mem_aligner
-        output_file_basename: aligned_bam_basename@add_comment
+        output_file_basename: aligned_bam_basename@revert_bam
       depends_on:
       - completed@bwa_mem_aligner
 
@@ -412,10 +396,22 @@ tools:
           type: object
       input_format:
         type: string
+      bams:
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.bam"
 
     output:
-      unaligned_by_rg_dir:
+      aligned_bam_basename:
         type: string
+      output_bams:
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.bam"
 
   replace_readgroup:
     command: replace_readgroup.py
