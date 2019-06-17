@@ -4,7 +4,7 @@
 
 workflow:
   name:  bwa-mem-wgs-aligner
-  version: "0.2.4"
+  version: "0.2.3"
 
   env_var:  # JT will not pass these as parameters for tasks, instead, JT may check existence of the env variable
     SCORE_TOKEN:
@@ -34,9 +34,6 @@ workflow:
     util_dckr:
       type: string
       default: quay.io/pancancer/util_dckr:0.1.0
-    cgpmap_dckr:
-      type: string
-      default: quay.io/wtsicgp/dockstore-cgpmap:3.1.4
     bwa_mem_aligner_docker:
       type: string
       default: quay.io/pancancer/dna-seq-processing:latest
@@ -113,7 +110,7 @@ workflow:
         metadata_json: metadata_json@validate_metadata
         picard_jar: picard_jar
         input_format: input_format@validate_metadata
-        unaligned_by_rg_dir: output_dir@revert_bam
+        unaligned_by_rg_dir: unaligned_by_rg_dir@revert_bam
 
     add_comment:
       tool: add_comment
@@ -122,7 +119,7 @@ workflow:
         bams: bams@fastq_to_sam
         picard_jar: picard_jar
         input_format: input_format@validate_metadata
-        unaligned_rg_replace_dir: output_dir@replace_readgroup
+        unaligned_rg_replace_dir: unaligned_rg_replace_dir@replace_readgroup
 
     lane_bam_qc:
       tool: lane_bam_qc
@@ -157,12 +154,6 @@ workflow:
       depends_on:
       - completed@bwa_mem_aligner
 
-    aligned_bam_bas:
-      tool: aligned_bam_bas
-      input:
-        aligned_bam: merged_output_bam@bam_merge_sort_markdup
-        merged_bam_dir: output_dir@bam_merge_sort_markdup
-
     aligned_bam_qc:
       tool: aligned_bam_qc
       input:
@@ -191,17 +182,17 @@ workflow:
         task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
 
-    #generate_song_payload:
-    #  tool: generate_song_payload
-    #  input:
-    #    util_dckr: util_dckr
-    #    metadata_yaml: metadata_yaml
-    #    bam_file: merged_output_bam@bam_merge_sort_markdup
-    #    bai_file: merged_output_bai@bam_merge_sort_markdup
-    #    tar_file: tar_file@create_tar
-    #    task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
-    #    lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
-    #    task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
+    generate_song_payload:
+      tool: generate_song_payload
+      input:
+        util_dckr: util_dckr
+        metadata_yaml: metadata_yaml
+        bam_file: merged_output_bam@bam_merge_sort_markdup
+        bai_file: merged_output_bai@bam_merge_sort_markdup
+        tar_file: tar_file@create_tar
+        task_aligned_bam_qc_outdir: output_dir@aligned_bam_qc
+        lane_bam_qc_dir: lane_bam_qc_dir@lane_bam_qc
+        task_aligned_bam_oxog_metrics_wkdir: output_dir@aligned_bam_oxog_metrics
 
 
     #upload_song_payload_collab:
@@ -423,7 +414,7 @@ tools:
         type: string
 
     output:
-      output_dir:
+      unaligned_by_rg_dir:
         type: string
 
   replace_readgroup:
@@ -442,10 +433,8 @@ tools:
         type: string
 
     output:
-      output_dir:
+      unaligned_rg_replace_dir:
         type: string
-      rg_bam_map:
-        type: object
 
   add_comment:
     command: add_comment.py
@@ -604,7 +593,7 @@ tools:
           bam-merge-sort-markdup.py \
           -i ${sep=' ' aligned_lane_bam_names} \
           -o ${output_file_basename}.bam \
-          biobambam \
+          picard-biobambam \
       && echo "{ \"output_dir\": \"$(pwd)\", \"merged_output_bam\": \"$(pwd)/${output_file_basename}.bam\",
       \"merged_output_bai\": \"$(pwd)/${output_file_basename}.bam.bai\",
       \"merged_output_md5\": \"$(pwd)/${output_file_basename}.bam.md5\",
@@ -635,28 +624,6 @@ tools:
       merged_output_bam.duplicates-metrics:
         type: string
         is_file: true
-
-  aligned_bam_bas:
-    command: |
-      docker pull ${cgpmap_dckr} \
-      && docker run \
-          --rm \
-          --user 1000:1000 \
-          --workdir / \
-          -v ${merged_bam_dir}:/data:rw \
-          ${cgpmap_dckr} bam_stats -i /data/$(basename ${aligned_bam}) -o /data/$(basename ${aligned_bam}).bas -@ 18 \
-      && echo "{ \"bas_file\": \"${merged_bam_dir}/$(basename ${aligned_bam}).bas\" }" > output.json
-    input:
-      aligned_bam:
-        type: string
-      merged_bam_dir:
-        type: string
-        is_dir: true
-    output:
-      bas_file:
-        type: string
-        is_file: true
-
 
   aligned_bam_qc:  # this requires RScript, install it by 'apt install r-base-core'
     command: |
@@ -730,7 +697,7 @@ tools:
           -v ${task_aligned_bam_qc_outdir}:/aligned_bam_qc \
           -v ${lane_bam_qc_dir}:/unaligned_seq_qc \
           -v ${task_aligned_bam_oxog_metrics_wkdir}:/oxog_metrics \
-          ${util_dckr} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" \
+          ${util_dckr} sh -c "tar czf /data/$TAR_NAME aligned_bam_qc/multiple_metrics.* unaligned_seq_qc/*.lane.bam.quality_yield_metrics.txt oxog_metrics/oxoG_metrics.txt" \
       && echo "{ \"tar_file\": \"${output_dir}/$TAR_NAME\" }" > output.json
 
     input:

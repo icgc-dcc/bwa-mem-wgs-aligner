@@ -38,27 +38,31 @@ case_map = {
 # the inputs are BAM
 if input_format == 'BAM':
     picard = task_dict['input'].get('picard_jar')
-    unaligned_rg_replace_dir = task_dict['input'].get('output_dir')
+    unaligned_rg_replace_dir = task_dict['input'].get('unaligned_rg_replace_dir')
 
     rg_args = []
     for ct in ['study', 'donorSubmitterId', 'specimenSubmitterId', 'sampleSubmitterId', 'specimenType', 'libraryStrategy', 'useCntl']:
         rg_args.append('C=%s:%s' % (case_map.get(ct), metadata.get(ct)))
 
-    for f in glob.glob(os.path.join(unaligned_rg_replace_dir, '*.bam')):
-        # add comments to lane-level bams
-        try:
-            subprocess.run(['java', '-jar', picard,
-                            'AddCommentsToBam',
-                            'I=%s' % f),
-                            'O=%s' % os.path.join(cwd, os.path.basename(f))] + rg_args, check=True)
-        except Exception as e:
-            sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, f))
+    files = metadata.get('files')
+    output_dir = os.path.join(cwd, 'lane_unaligned')
+    if not os.path.isdir(output_dir): os.makedirs(output_dir)
 
-        output['bams'].append(os.path.join(cwd, os.path.basename(f)))
+    for _file in files:
+        # add comments to lane-level bams
+        for rg in _file.get('readGroups'):
+            try:
+                subprocess.run(['java', '-jar', picard,
+                                'AddCommentsToBam',
+                                'I=%s' % os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam'),
+                                'O=%s' % os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam')] + rg_args, check=True)
+            except Exception as e:
+                sys.exit('\n%s: AddCommentsToBam failed: %s' %(e, os.path.join(unaligned_rg_replace_dir, rg.get('readGroupId')+'.new.bam')))
+
+            output['bams'].append(os.path.join(output_dir, rg.get('readGroupId').replace(':', '_')+'.lane.bam'))
 
     # delete the files at the very last moment
-    for f in glob.glob(os.path.join(unaligned_rg_replace_dir, "*.bam")):
-        os.remove(f)
+    if os.path.isdir(unaligned_rg_replace_dir): shutil.rmtree(unaligned_rg_replace_dir)
 
 elif input_format == 'FASTQ':
     output['bams'] = task_dict['input'].get('bams')
