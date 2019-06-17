@@ -72,6 +72,15 @@ workflow:
       type: string
       is_file: true
       default: "[GRCh38_hla_decoy_ebv.fa.gz]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.gz"
+    reference_fai:
+      type: string
+      is_file: true
+      default: "[GRCh38_hla_decoy_ebv.fa.fai]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa.fai"
+    reference:
+      type: string
+      is_file: true
+      default: "[GRCh38_hla_decoy_ebv.fa]https://object.cancercollaboratory.org:9080/swift/v1/genomics-public-data/reference-genome/GRCh38_hla_decoy_ebv/GRCh38_hla_decoy_ebv.fa"
+
     cgc_project_name:
       type: string
 
@@ -103,28 +112,12 @@ workflow:
         download_files: download_files@download
         picard_jar: picard_jar
         input_format: input_format@validate_metadata
-
-    replace_readgroup:
-      tool: replace_readgroup
-      input:
-        metadata_json: metadata_json@validate_metadata
-        picard_jar: picard_jar
-        input_format: input_format@validate_metadata
-        unaligned_by_rg_dir: unaligned_by_rg_dir@revert_bam
-
-    add_comment:
-      tool: add_comment
-      input:
-        metadata_json: metadata_json@validate_metadata
         bams: bams@fastq_to_sam
-        picard_jar: picard_jar
-        input_format: input_format@validate_metadata
-        unaligned_rg_replace_dir: unaligned_rg_replace_dir@replace_readgroup
 
     lane_bam_qc:
       tool: lane_bam_qc
       input:
-        lane_bams: bams@add_comment
+        lane_bams: bams@revert_bam
         picard_jar: picard_jar
         min_coverage: min_coverage
 
@@ -132,7 +125,7 @@ workflow:
       tool: bwa_mem_aligner
       input:
         bwa_mem_aligner_docker: bwa_mem_aligner_docker
-        lane_bams: bams@add_comment
+        lane_bams: bams@revert_bam
         reference_gz_amb: reference_gz_amb
         reference_gz_sa: reference_gz_sa
         reference_gz_pac: reference_gz_pac
@@ -150,7 +143,9 @@ workflow:
         bam_merge_sort_markdup_docker: bam_merge_sort_markdup_docker
         aligned_lane_bam_names: aligned_lane_bam_names@bwa_mem_aligner
         aligned_lane_bam_dir: output_dir@bwa_mem_aligner
-        output_file_basename: aligned_bam_basename@add_comment
+        output_file_basename: aligned_bam_basename@revert_bam
+        reference: reference
+        reference_fai: reference_fai
       depends_on:
       - completed@bwa_mem_aligner
 
@@ -412,10 +407,22 @@ tools:
           type: object
       input_format:
         type: string
+      bams:
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.bam"
 
     output:
-      unaligned_by_rg_dir:
+      aligned_bam_basename:
         type: string
+      output_bams:
+        type: array
+        items:
+          type: string
+          is_file: true
+          glob_pattern: "*.bam"
 
   replace_readgroup:
     command: replace_readgroup.py
@@ -589,15 +596,20 @@ tools:
           --workdir /output \
           -v $(pwd):/output:rw \
           -v ${aligned_lane_bam_dir}:/data:ro \
+          -v ${reference}:/ref/$(basename ${reference}):ro \
+          -v ${reference_fai}:/ref/$(basename ${reference_fai}):ro \
           ${bam_merge_sort_markdup_docker} \
           bam-merge-sort-markdup.py \
           -i ${sep=' ' aligned_lane_bam_names} \
-          -o ${output_file_basename}.bam \
-          picard-biobambam \
+          -o ${output_file_basename} \
+          -r $(basename ${reference}) \
+          -d \
+          -c \
       && echo "{ \"output_dir\": \"$(pwd)\", \"merged_output_bam\": \"$(pwd)/${output_file_basename}.bam\",
       \"merged_output_bai\": \"$(pwd)/${output_file_basename}.bam.bai\",
-      \"merged_output_md5\": \"$(pwd)/${output_file_basename}.bam.md5\",
-      \"merged_output_bam.duplicates-metrics\": \"$(pwd)/${output_file_basename}.bam.duplicates-metrics.txt\" }" > output.json
+      \"merged_output_bam.duplicates-metrics\": \"$(pwd)/${output_file_basename}.bam.duplicates-metrics.txt\",
+      \"merged_output_cram\": \"$(pwd)/${output_file_basename}.cram\",
+      \"merged_output_crai\": \"$(pwd)/${output_file_basename}.cram.crai\" }" > output.json
     input:
       bam_merge_sort_markdup_docker:
         type: string
@@ -608,6 +620,12 @@ tools:
         type: string
       output_file_basename:
         type: string
+      reference:
+        type: string
+        is_file: true
+      reference_fai:
+        type: string
+        is_file: true
     output:
       output_dir:
         type: string
@@ -618,12 +636,16 @@ tools:
       merged_output_bai:
         type: string
         is_file: true
-      merged_output_md5:
-        type: string
-        is_file: true
       merged_output_bam.duplicates-metrics:
         type: string
         is_file: true
+      merged_output_cram:
+        type: string
+        is_file: true
+      merged_output_crai:
+        type: string
+        is_file: true
+
 
   aligned_bam_qc:  # this requires RScript, install it by 'apt install r-base-core'
     command: |

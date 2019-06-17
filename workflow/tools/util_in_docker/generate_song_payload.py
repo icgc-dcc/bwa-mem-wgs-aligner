@@ -13,6 +13,7 @@ import re, os
 import uuid
 import tarfile
 import json
+import sys
 
 
 def main():
@@ -207,7 +208,11 @@ def parse_insert_size_metrics(metrics_fp):
     raise Exception("The metrics cloud not be found.")
 
 def load_quality_yield_metrics(metrics_dir, read_group):
-    metrics_file = os.path.join(metrics_dir,retrieve_metrics_file(metrics_dir,read_group))
+    rg_fname = "".join([c if re.match(r"[a-zA-Z0-9\-_]", c) else "_" for c in read_group])
+    metrics_file = os.path.join(metrics_dir, rg_fname + '.lane.bam.quality_yield_metrics.txt')
+    if not os.path.isfile(metrics_file):
+        sys.exit("The metrics file %s does not exist." % (metrics_file))
+
     with open(metrics_file,'r') as fp:
         return parse_quality_yield_metrics(fp)
 
@@ -218,13 +223,6 @@ def parse_quality_yield_metrics(metrics_fp):
             if not re.match(r'^\s*$', line):
                 lines.append(line.rstrip().split('\t'))
     return dict(zip(lines[0], lines[1]))
-
-def retrieve_metrics_file(metrics_directory, read_group):
-    file_full_path = os.path.join(metrics_directory,read_group+'.lane.bam.quality_yield_metrics.txt')
-    for file in os.listdir(metrics_directory):
-        if file.startswith(read_group) and file.endswith('.lane.bam.quality_yield_metrics.txt'):
-            return file
-    raise Exception("The metrics file %s does not exist." % (file_full_path))
 
 def get_workflow_data(wf_name, wf_version, execution_runner_name, execution_runner_version, execution_job_id,yaml_data):
     return {
