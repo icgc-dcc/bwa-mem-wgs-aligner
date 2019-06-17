@@ -5,6 +5,8 @@ import subprocess
 import sys
 import json
 import glob
+import re
+import datetime
 
 """
 Major steps:
@@ -70,21 +72,7 @@ if input_format == 'BAM':
             readGroupId = os.path.basename(filename).replace(".bam", "")
             rg_fname = "".join([c if re.match(r"[a-zA-Z0-9\-_]", c) else "_" for c in readGroupId])
             os.rename(filename, os.path.join(cwd, rg_fname+".lane.bam"))
-            output['bams'].append(os.path.join(cwd, rg_fname+".lane.bam")
-
-
-    # delete the files at the very last step
-    for file_dict in download_files:
-        if not os.path.isfile(file_dict.get('local_path')):
-            continue
-        # remove only when the file is downloaded into another task dir of the same job
-        if file_dict.get('local_path').split(os.sep)[:-2] != cwd.split(os.sep)[:-1]:
-            continue
-        try:
-            os.remove(file_dict.get('local_path'))
-        except Exception as e:
-            sys.exit('\n%s: Delete file failed: %s' % (e, file_dict.get('local_path')))
-
+            output['bams'].append(os.path.join(cwd, rg_fname+".lane.bam"))
 
 elif input_format == 'FASTQ':
     output['bams'] = task_dict['input'].get('bams')
@@ -92,8 +80,19 @@ elif input_format == 'FASTQ':
 else:
     sys.exit('\n%s: Input files format are not FASTQ or BAM')
 
-
 output['aligned_bam_basename'] = '.'.join([metadata.get('aliquotId'), str(len(output['bams'])), datetime.date.today().strftime("%Y%m%d"), 'wgs', 'grch38'])
+
+# delete the files at the very last step
+for file_dict in download_files:
+    if not os.path.isfile(file_dict.get('local_path')):
+        continue
+    # remove only when the file is downloaded into another task dir of the same job
+    if file_dict.get('local_path').split(os.sep)[:-2] != cwd.split(os.sep)[:-1]:
+        continue
+    try:
+        os.remove(file_dict.get('local_path'))
+    except Exception as e:
+        sys.exit('\n%s: Delete file failed: %s' % (e, file_dict.get('local_path')))
 
 
 with open("output.json", "w") as o:
