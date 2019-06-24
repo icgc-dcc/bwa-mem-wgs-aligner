@@ -33,7 +33,7 @@ workflow:
       default: "[picard.jar]https://github.com/broadinstitute/picard/releases/download/2.18.16/picard.jar"
     util_dckr:
       type: string
-      default: quay.io/pancancer/util_dckr:0.1.0
+      default: quay.io/pancancer/util_dckr:latest
     bwa_mem_aligner_docker:
       type: string
       default: quay.io/pancancer/dna-seq-processing:latest
