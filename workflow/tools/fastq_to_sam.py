@@ -88,14 +88,6 @@ if input_format == 'FASTQ':
 
         output['bams'].append(os.path.join(cwd, rg_fname + '.lane.bam'))
 
-    # delete the files at the very last step
-    for file_dict in download_files:
-        if not os.path.isfile(file_dict.get('local_path')): continue
-        try:
-            os.remove(file_dict.get('local_path'))
-        except Exception as e:
-            sys.exit('\n%s: Delete file failed: %s' % (e, file_dict.get('local_path')))
-
 # the inputs are BAM
 elif input_format == 'BAM':
     pass
